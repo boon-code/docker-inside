@@ -70,3 +70,11 @@ def test_get_client_config_without_env():
     ret, params = dut._get_client_config(env)
     assert not ret, "Default settings with local docker client"
     assert ('base_url', 'tls') not in params.keys()
+
+
+def test_split_and_filter():
+    from dockerinside import dockerutils as du
+    t1 = list(du._split_and_filter(["/", "/", "a", "b", "c", "/", "/"]))
+    assert t1 == ["a", "b", "c"]
+    t2 = list(du._split_and_filter(["a", "b", "c"]))
+    assert t2 == ["a", "b", "c"]

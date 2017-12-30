@@ -1,5 +1,8 @@
 import os
-import abc
+import grp
+import tarfile
+import tempfile
+import collections.abc
 
 import docker
 import docker.tls
@@ -9,6 +12,13 @@ class ContainerError(RuntimeError):
     def __init__(self, cname, *args):
         RuntimeError.__init__(self, *args)
         self.container = cname
+
+
+class InvalidContainerState(ContainerError):
+    def __init__(self, cname, state):
+        text = "Container '{0}' in invalid state '{1}'".format(cname, state)
+        ContainerError.__init__(self, cname, text)
+        self.state = state
 
 
 class InvalidPath(RuntimeError):
@@ -47,6 +57,62 @@ def _assert_path_exists(path, type_=None):
         if not os.path.exists(abs_path):
             raise InvalidPath(abs_path, '')
 
+def env_list_to_dict(env_list):
+    for i in env_list:
+        key, value = env_list.split("=", 1)
+        yield key, value
+
+def tar_pack(data, write_mode='w', default_mode=0o640):
+    def _add_file(arch, name, payload, mode):
+        ti = tarfile.TarInfo(name)
+        ti.uid = 0
+        ti.gid = 0
+        ti.mode = mode
+        ti.uname = "root"
+        ti.gname = "root"
+        with tempfile.TemporaryFile(prefix='docker-file') as f:
+            f.write(payload)
+            f.flush()
+            ti.size = f.tell()
+            f.seek(0)
+            arch.addfile(ti, f)
+
+    with tempfile.TemporaryFile(prefix='docker-archive') as archf:
+        arch = tarfile.open(fileobj=archf, mode=write_mode)
+        for k, v in data.items():
+            if 'mode' not in v: v['mode'] = default_mode
+            if 'payload' not in v: v['payload'] = b''
+            _add_file(arch, k, v['payload'], v['mode'])
+        arch.close()
+        archf.flush()
+        archf.seek(0)
+        data = archf.read()
+        return data
+
+
+def get_user_groups(username):
+    return list([g for g in grp.getgrall() if username in g.gr_mem])
+
+
+def _split_and_filter(args):
+    for i in args:
+        parts = i.split('/')
+        for j in parts:
+            if j != '':
+                yield j
+
+def linux_pjoin(*args):
+    """ Joins arguments as if they were linux paths, directories, files
+
+    :param args: Parts of a path to join
+    """
+    root = ''
+    if args[0].startswith('/'):
+        root = '/'
+    parts = _split_and_filter(args)
+    rpath = "/".join(parts)
+    return root + rpath
+
 
 class BasicDockerApp(object):
 
@@ -73,7 +139,7 @@ class BasicDockerApp(object):
 
     @classmethod
     def normalize_image_spec(cls, image_spec):
-        if isinstance(image_spec, abc.Sequence):
+        if isinstance(image_spec, collections.abc.Sequence):
             seq = image_spec
         else:
             seq = cls.normalize_image(image_spec)
@@ -87,6 +153,33 @@ class BasicDockerApp(object):
     def _create_docker_client(cls, params):
         return docker.Client(**params)
 
+    @staticmethod
+    def _assert_state(cname, cfg, *allowed_states):
+        status = cfg['State']['Status']
+        if status not in allowed_states:
+            raise InvalidContainerState(cname, status)
+
+    @staticmethod
+    def volume_args_to_dict(args):
+        d = dict()
+        for i in args:
+            mode = 'rw'
+            tmp = i.split(":", 2)
+            if len(tmp) == 3:
+                mode = tmp[2]
+            elif len(tmp) == 2:
+                pass
+            elif len(tmp) == 1:
+                tmp.append(tmp[0])
+            else:
+                raise ValueError("Wrong volume spec: '{0}".format(i))
+            d[tmp[0]] = dict(bind=tmp[1], mode=mode)
+
+    def __init__(self, log, env=None):
+        self._log = log
+        _, params = self._get_client_config(env)
+        self._dc = self._create_docker_client(params)
+
     def _assert_image_available(self, image_spec, auto_pull=False):
         img, tag = self.normalize_image(image_spec)
         image_spec = self.combine_image_spec(img, tag)
@@ -99,11 +192,6 @@ class BasicDockerApp(object):
                     raise MissingImageError(img, tag, True)
             else:
                 raise MissingImageError(img, tag, False)
-
-    def __init__(self, log, env=None):
-        self._log = log
-        _, params = self._get_client_config(env)
-        self._dc = self._create_docker_client(params)
 
     def _get_client_config(self, env=None):
         if env is None:
