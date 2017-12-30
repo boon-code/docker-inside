@@ -1,9 +1,11 @@
 import os
+import sys
 import logging
 import argparse
 import argcomplete
 import docker
 import dockerpty
+
 from . import dockerutils
 
 
@@ -69,3 +71,12 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                 logging.exception("Image {0} doesn't exist".format(e.fullname))
         except Exception:
             logging.exception("Failed to run inside()")
+
+
+def main():
+    app = DockerInsideApp()
+    app.run(sys.argv[1:])
+
+
+if __name__ == '__main__':
+    main()
