@@ -43,15 +43,22 @@ _add_group() {
 
     grep -E "^${grp_name}:" /etc/group >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
-        _debug "Create group ${grp_name} (${grp_id})"
-        if [ ${BUSYBOX} -eq 1 ]; then
-            /bin/busybox addgroup -g "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
-            ret=$?
+        grep -E "^[^:]+:[^:]+:${grp_id}:" /etc/group >/dev/null 2>/dev/null
+        if [ $? -ne 0 ]; then
+            _debug "Create group ${grp_name} (${grp_id})"
+            if [ ${BUSYBOX} -eq 1 ]; then
+                /bin/busybox addgroup -g "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
+                ret=$?
+            else
+                addgroup --gid "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
+                ret=$?
+            fi
+            [ $ret -eq 0 ] || _fail "Couldn't create group '${grp_name}': errno=$ret"
+            return 0
         else
-            addgroup --gid "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
-            ret=$?
+            _debug "Group id ${grp_id} (${grp_name}) already used - skip"
+            return 1
         fi
-        [ $ret -eq 0 ] || _fail "Couldn't create group '${grp_name}': errno=$ret"
     else
         _debug "Group '${grp_name}' already exists"
     fi
@@ -83,6 +90,8 @@ main() {
         echo ""
     fi
 
+    _debug "BUSYBOX is ${BUSYBOX}"
+
     _add_group "${DIN_GROUP}" "${DIN_GID}"
 
     _debug "Create user ${DIN_USER}"
@@ -110,9 +119,10 @@ main() {
         local name="${elm%%,*}"
         local gid="${elm#*,}"
 
-        _add_group "${name}" "${gid}"
-        adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
-        [ $? -eq 0 ] || _fail "Couldn't add user ${DIN_USER} to group ${name}"
+        if _add_group "${name}" "${gid}" ; then
+            adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
+            [ $? -eq 0 ] || _fail "Couldn't add user ${DIN_USER} to group ${name}"
+        fi
     done
 
     _debug "Original entrypoint: ${DIN_ENTRYPOINT}"
