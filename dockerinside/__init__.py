@@ -4,22 +4,26 @@ import pwd
 import grp
 import logging
 import argparse
+
 import argcomplete
-import docker
 import dockerpty
 
-from dockerinside import dockerutils
-from dockerinside.dockerutils import get_user_groups
 from . import dockerutils
 
 _DEFAULT_LOG_FORMAT = "%(name)s : %(threadName)s : %(levelname)s : %(message)s"
 logging.basicConfig(
     stream=sys.stderr,
     format=_DEFAULT_LOG_FORMAT,
-    level=logging.DEBUG,
+    level=logging.INFO,
 )
 
 INSIDE_SCRIPT = b"""#!/bin/sh
+
+if [ -e /bin/busybox ]; then
+    BUSYBOX=1
+else
+    BUSYBOX=0
+fi
 
 _fail() {
     echo "ERROR: $@" >&2
@@ -35,24 +39,68 @@ _debug() {
 _add_group() {
     local grp_name="$1"
     local grp_id="$2"
+    local ret=-1
 
     grep -E "^${grp_name}:" /etc/group >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         _debug "Create group ${grp_name} (${grp_id})"
-        groupadd -g ${grp_id} ${grp_name} >/dev/null 2>/dev/null
-        [ $? -eq 0 ] || _fail "Couldn't create group '${grp_name}': errno=$?"
+        if [ ${BUSYBOX} -eq 1 ]; then
+            /bin/busybox addgroup -g "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
+            ret=$?
+        else
+            addgroup --gid "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
+            ret=$?
+        fi
+        [ $ret -eq 0 ] || _fail "Couldn't create group '${grp_name}': errno=$ret"
     else
         _debug "Group '${grp_name}' already exists"
     fi
 }
 
+try_su_exec() {
+    local tmp=""
+
+    if [ -e /bin/su-exec ]; then
+        _debug "su-exec binary found"
+    else
+        _debug "su-exec binary not found"
+        return 1
+    fi
+
+    tmp="$(/bin/su-exec "${DIN_USER}" id -u)"
+    if [ "${tmp}" = "${DIN_UID}" ]; then
+        _debug "su-exec seems to work: uid=${tmp}"
+        return 0
+    else
+        _debug "su-exec call failed: uid=${tmp}"
+        return 1
+    fi
+}
+
 main() {
+
+    if [ "${DIN_VERBOSE}" = "1" ]; then
+        echo ""
+    fi
+
     _add_group "${DIN_GROUP}" "${DIN_GID}"
 
     _debug "Create user ${DIN_USER}"
     id -u ${DIN_USER} >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
-        useradd -g ${DIN_GID} -u ${DIN_UID} -m -s /bin/sh ${DIN_USER} >/dev/null 2>/dev/null
+        local ret=-1
+        if [ ${BUSYBOX} -eq 1 ]; then
+            /bin/busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" >/dev/null 2>/dev/null
+            ret=$?
+        else
+            useradd --gid "${DIN_GID}" \
+                    --uid "${DIN_UID}" \
+                    --shell /bin/sh \
+                    --no-create-home \
+                    --no-user-group \
+                    "${DIN_USER}" >/dev/null 2>/dev/null
+            ret=$?
+        fi
         [ $? -eq 0 ] || _fail "Couldn't create user ${DIN_USER}: errno=$?"
     else
         _debug "User '${DIN_USER}' already exists"
@@ -63,21 +111,19 @@ main() {
         local gid="${elm#*,}"
 
         _add_group "${name}" "${gid}"
+        adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
+        [ $? -eq 0 ] || _fail "Couldn't add user ${DIN_USER} to group ${name}"
     done
-
-    usermod -aG "${DIN_GROUP_NAMES}" "${DIN_USER}" >/dev/null 2>/dev/null
 
     _debug "Original entrypoint: ${DIN_ENTRYPOINT}"
     _debug "Inner command: $@"
     echo "exec ${DIN_ENTRYPOINT} $@" > /docker_inside_inner.sh
     chmod a+rx /docker_inside_inner.sh
 
-    echo ""
-
-    if [ -e /bin/su-exec ]; then
+    if try_su_exec ; then
         exec su-exec "${DIN_USER}" "/docker_inside_inner.sh"
     else
-        exec su -l -c "/docker_inside_inner.sh" "${DIN_USER}"
+        exec su -c "/docker_inside_inner.sh" "${DIN_USER}"
     fi
 }
 
@@ -92,13 +138,17 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
     def _parseArgs(cls, argv):
         parser = argparse.ArgumentParser()
         parser.add_argument('--verbose',
-                            dest='verbosity',
+                            dest='loglevel',
                             action='store_const',
                             const=logging.DEBUG)
         parser.add_argument('--quiet',
-                            dest='verbosity',
+                            dest='loglevel',
                             action='store_const',
                             const=logging.ERROR)
+        parser.add_argument('--debug',
+                            action='store_true',
+                            default=False,
+                            help="Enable debug output in shell script")
         parser.add_argument('--name',
                             help="Name of the container")
         parser.add_argument('-v', '--volume',
@@ -123,6 +173,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         parser.add_argument('args',
                             nargs="*",
                             help="Arguments for command cmd")
+        parser.set_defaults(loglevel=logging.INFO)
         args = parser.parse_args(args=argv)
         return args
 
@@ -131,6 +182,11 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         dockerutils.BasicDockerApp.__init__(self, log, env)
         self._args = None
         self._cid = None
+
+    def _adapt_log_level(self):
+        if not self._args.debug:
+            logging.getLogger('urllib3').setLevel(logging.INFO)
+        logging.getLogger().setLevel(self._args.loglevel)
 
     def _prepare_environment(self, image_info):
         uid = os.getuid()
@@ -159,6 +215,8 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
             "DIN_GROUPS": group_env,
             "DIN_GROUP_NAMES": groups_txt,
         })
+        if self._args.debug:
+            env["DIN_VERBOSE"] = "1"
         try:
             last_ep = image_info["Config"]["Entrypoint"]
             if last_ep is not None:
@@ -220,9 +278,15 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         self._dc.put_archive(self._cid, '/', script_pack)
         self._start()
 
+    def _isatty(self):
+        return os.isatty(sys.stdin.fileno())
+
     def _start(self):
         self._log.info("Starting container: {0}".format(self._cid['Id']))
-        dockerpty.start(self._dc, self._cid['Id'])
+        if self._isatty():
+            dockerpty.start(self._dc, self._cid['Id'])
+        else:
+            self._dc.start(self._cid)
         self._dc.wait(self._cid)
         self._log.info("Container {0} stopped".format(self._cid['Id']))
 
@@ -234,10 +298,13 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         self._dc.remove_container(self._cid)
         self._cid = None
 
-    def run(self, argv):
+    def run(self, argv, capture_stdout=False):
         self._args = self._parseArgs(argv)
+        self._adapt_log_level()
         try:
             self._inside()
+            if capture_stdout:
+                return self._dc.logs(self._cid, stderr=False)
         except dockerutils.InvalidPath as e:
             logging.exception("{0} '{1}' doesn't exist".format(e.type_, e.path))
         except dockerutils.MissingImageError as e:
@@ -251,6 +318,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
             logging.exception("Failed to run inside()")
         finally:
             self.cleanup()
+        return None
 
 
 def main():
