@@ -59,8 +59,10 @@ def _assert_path_exists(path, type_=None):
 
 
 def env_list_to_dict(env_list):
+    if env_list is None:
+        env_list = []
     for i in env_list:
-        key, value = env_list.split("=", 1)
+        key, value = i.split("=", 1)
         yield key, value
 
 
@@ -179,6 +181,7 @@ class BasicDockerApp(object):
             else:
                 raise ValueError("Wrong volume spec: '{0}".format(i))
             d[tmp[0]] = dict(bind=tmp[1], mode=mode)
+        return d
 
     def __init__(self, log, env=None):
         self._log = log
