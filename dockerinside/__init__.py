@@ -99,7 +99,8 @@ main() {
     if [ $? -ne 0 ]; then
         local ret=-1
         if [ ${BUSYBOX} -eq 1 ]; then
-            /bin/busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" >/dev/null 2>/dev/null
+            /bin/busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" \
+                                 >/dev/null 2>/dev/null
             ret=$?
         else
             useradd --gid "${DIN_GID}" \

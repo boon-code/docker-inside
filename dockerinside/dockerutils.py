@@ -67,7 +67,7 @@ def env_list_to_dict(env_list):
 
 
 def tar_pack(data, write_mode='w', default_mode=0o640):
-    def _add_file(arch, name, payload, mode):
+    def _add_file(archive, name, payload, mode):
         ti = tarfile.TarInfo(name)
         ti.uid = 0
         ti.gid = 0
@@ -79,7 +79,7 @@ def tar_pack(data, write_mode='w', default_mode=0o640):
             f.flush()
             ti.size = f.tell()
             f.seek(0)
-            arch.addfile(ti, f)
+            archive.addfile(ti, f)
 
     with tempfile.TemporaryFile(prefix='docker-archive') as archf:
         arch = tarfile.open(fileobj=archf, mode=write_mode)
