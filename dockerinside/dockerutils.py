@@ -57,10 +57,12 @@ def _assert_path_exists(path, type_=None):
         if not os.path.exists(abs_path):
             raise InvalidPath(abs_path, '')
 
+
 def env_list_to_dict(env_list):
     for i in env_list:
         key, value = env_list.split("=", 1)
         yield key, value
+
 
 def tar_pack(data, write_mode='w', default_mode=0o640):
     def _add_file(arch, name, payload, mode):
@@ -81,8 +83,10 @@ def tar_pack(data, write_mode='w', default_mode=0o640):
         arch = tarfile.open(fileobj=archf, mode=write_mode)
         for k, v in data.items():
             if 'mode' not in v: v['mode'] = default_mode
-            if 'payload' not in v: v['payload'] = b''
-            _add_file(arch, k, v['payload'], v['mode'])
+            if 'file' in v:
+                arch.add(v['file'], arcname=k)
+            else:
+                _add_file(arch, k, v.get('payload', b''), v['mode'])
         arch.close()
         archf.flush()
         archf.seek(0)
@@ -100,6 +104,7 @@ def _split_and_filter(args):
         for j in parts:
             if j != '':
                 yield j
+
 
 def linux_pjoin(*args):
     """ Joins arguments as if they were linux paths, directories, files
