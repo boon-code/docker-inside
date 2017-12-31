@@ -145,7 +145,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
     SCRIPT_NAME = "docker_inside.sh"
 
     @classmethod
-    def _parseArgs(cls, argv):
+    def _parse_args(cls, argv):
         parser = argparse.ArgumentParser()
         parser.add_argument('--verbose',
                             dest='loglevel',
@@ -288,7 +288,8 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         self._dc.put_archive(self._cid, '/', script_pack)
         self._start()
 
-    def _isatty(self):
+    @staticmethod
+    def _isatty():
         return os.isatty(sys.stdin.fileno())
 
     def _start(self):
@@ -309,7 +310,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         self._cid = None
 
     def run(self, argv, capture_stdout=False):
-        self._args = self._parseArgs(argv)
+        self._args = self._parse_args(argv)
         self._adapt_log_level()
         try:
             self._inside()

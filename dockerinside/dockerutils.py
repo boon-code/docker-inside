@@ -84,7 +84,8 @@ def tar_pack(data, write_mode='w', default_mode=0o640):
     with tempfile.TemporaryFile(prefix='docker-archive') as archf:
         arch = tarfile.open(fileobj=archf, mode=write_mode)
         for k, v in data.items():
-            if 'mode' not in v: v['mode'] = default_mode
+            if 'mode' not in v:
+                v['mode'] = default_mode
             if 'file' in v:
                 arch.add(v['file'], arcname=k)
             else:

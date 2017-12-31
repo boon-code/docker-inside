@@ -17,7 +17,7 @@ def tapp():
 
 
 def test_argument_simple_parsing(tapp):
-    simple_args = tapp._parseArgs(["ubuntu:latest"])
+    simple_args = tapp._parse_args(["ubuntu:latest"])
     assert simple_args.image == "ubuntu:latest"
     assert (not simple_args.volumes)
     assert (not simple_args.mount_home)
@@ -25,7 +25,7 @@ def test_argument_simple_parsing(tapp):
 
 
 def test_argument_more_args(tapp):
-    simple_args = tapp._parseArgs(
+    simple_args = tapp._parse_args(
         ["--name=mycontainer",
          "-v", "/var/bla:/bla",
          "ubuntu:14.04"]
