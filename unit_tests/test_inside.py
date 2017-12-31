@@ -11,7 +11,9 @@ sys.path.insert(0, SRC_DIR)
 @pytest.fixture()
 def tapp():
     import dockerinside
-    return dockerinside.DockerInsideApp(env={})
+    app = dockerinside.DockerInsideApp(env={})
+    app._isatty = lambda: False
+    return app
 
 
 def test_argument_simple_parsing(tapp):
@@ -35,13 +37,26 @@ def test_argument_more_args(tapp):
     assert simple_args.name == "mycontainer"
 
 
-def test_simple_setup(tapp):
-    try:
-        tapp.run([
-            '--auto-pull',
-            '--name=di_simple_setup_test',
-            'ubuntu:16.04',
-            'echo "Hello, world"'
-        ])
-    finally:
-        tapp.cleanup()
+def test_simple_setup_docker(tapp):
+    txt = tapp.run(
+        ['--auto-pull',
+         '--name=di_simple_setup_test',
+         'ubuntu:16.04',
+         'echo',
+         "Hello, world"],
+        capture_stdout=True
+    )
+    assert b'Hello, world\r\n' == txt
+
+
+def test_user_id_docker(tapp):
+    txt = tapp.run(
+        ['--auto-pull',
+         '--name=di_simple_setup_test',
+         'ubuntu:16.04',
+         '--',
+         'id',
+         "-u"],
+        capture_stdout=True
+    )
+    assert "{0}\r\n".format(os.getuid()) == txt.decode('utf-8')
