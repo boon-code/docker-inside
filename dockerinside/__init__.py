@@ -222,10 +222,13 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                             action="append",
                             default=[],
                             help="Bind mounts a volume")
-        parser.add_argument('-H', '--mount-home',
-                            action="store_true",
-                            default=False,
-                            help="Mount home directory")
+        mnthome_grp = parser.add_mutually_exclusive_group()
+        mnthome_grp.add_argument('-H', '--mount-home',
+                                 action="store_true",
+                                 default=False,
+                                 help="Mount home directory")
+        mnthome_grp.add_argument('--mount-as-home',
+                                 help="Mount this directory as home")
         parser.add_argument('--auto-pull',
                             dest="auto_pull",
                             action="store_true",
@@ -313,7 +316,8 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                 "mode": 0o755,
             }
         }
-        suexec = os.path.join(os.path.expanduser('~'), '.config', 'docker_inside', 'su-exec')
+        home_dir = os.path.expanduser('~')
+        suexec = os.path.join(home_dir, '.config', 'docker_inside', 'su-exec')
         if os.path.exists(suexec):
             pack_conf.update({
                 "/bin/su-exec": {
@@ -325,12 +329,25 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         ports = dict(dockerutils.port_list_to_dict(self._args.ports))
         env = self._prepare_environment(image_info)
         cmd = self._prepare_command(image_info)
+        volumes = dict(self.volume_args_to_dict(self._args.volumes))
+        if self._args.mount_home:
+            self._log.debug("Mount real home directory")
+            volumes[home_dir] = {
+                "bind": home_dir,
+                "mode": 'rw',
+            }
+        elif self._args.mount_as_home is not None:
+            self._log.debug("Mount fake home directory: {0}".format(self._args.mount_as_home))
+            volumes[self._args.mount_as_home] = {
+                "bind": home_dir,
+                "mode": 'rw'
+            }
         entrypoint = dockerutils.linux_pjoin('/', self.SCRIPT_NAME)
         self._log.debug("New entrypoint: {0}".format(entrypoint))
         self._cobj = self._dc.containers.create(
             self._args.image,
             command=cmd,
-            volumes=dict(self.volume_args_to_dict(self._args.volumes)),
+            volumes=volumes,
             environment=env,
             entrypoint=entrypoint,
             name=self._args.name,
