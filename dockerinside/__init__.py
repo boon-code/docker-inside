@@ -159,6 +159,13 @@ main() {
     echo "exec ${DIN_ENTRYPOINT} $@" >> /docker_inside_inner.sh
     chmod a+rx /docker_inside_inner.sh
 
+    if [ "${DIN_CREATE_HOME}" = "1" ] && [ ! -d "/home/${DIN_USER}" ]; then
+        _debug "Create temporary home directory: /home/${DIN_USER}"
+        mkdir -p "/home/${DIN_USER}"
+        chown "${DIN_USER}:${DIN_GROUP}" "/home/${DIN_USER}"
+        chmod 0700 "/home/${DIN_USER}"
+    fi
+
     if try_su_exec ; then
         exec su-exec "${DIN_USER}" "/docker_inside_inner.sh"
     else
@@ -229,6 +236,10 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                                  help="Mount home directory")
         mnthome_grp.add_argument('--mount-as-home',
                                  help="Mount this directory as home")
+        mnthome_grp.add_argument('--tmp-home',
+                                 action='store_true',
+                                 default=False,
+                                 help="Create a temporary home directory")
         parser.add_argument('--auto-pull',
                             dest="auto_pull",
                             action="store_true",
@@ -342,6 +353,8 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                 "bind": home_dir,
                 "mode": 'rw'
             }
+        elif self._args.tmp_home:
+            env['DIN_CREATE_HOME'] = "1"
         entrypoint = dockerutils.linux_pjoin('/', self.SCRIPT_NAME)
         self._log.debug("New entrypoint: {0}".format(entrypoint))
         self._cobj = self._dc.containers.create(
