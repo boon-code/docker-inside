@@ -314,7 +314,10 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         if self._args.cmd:
             cmd = [self._args.cmd]
             cmd.extend(self._args.args)
-        self._log.debug("container command: {0}".format(" ".join(cmd)))
+        if cmd is None:
+            self._log.debug("command is null")
+        else:
+            self._log.debug("container command: {0}".format(" ".join(cmd)))
         return cmd
 
     def _inside(self):
