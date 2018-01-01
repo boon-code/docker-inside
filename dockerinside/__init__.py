@@ -153,7 +153,8 @@ main() {
 
     _debug "Original entrypoint: ${DIN_ENTRYPOINT}"
     _debug "Inner command: $@"
-    echo "exec ${DIN_ENTRYPOINT} $@" > /docker_inside_inner.sh
+    echo "#!/bin/sh" > /docker_inside_inner.sh
+    echo "exec ${DIN_ENTRYPOINT} $@" >> /docker_inside_inner.sh
     chmod a+rx /docker_inside_inner.sh
 
     if try_su_exec ; then
