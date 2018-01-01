@@ -14,11 +14,10 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-SETUP_SCRPT = b"""#!/bin/bash
+SETUP_SCRPT = b"""#!/bin/sh
 
 set -e
-DEBIAN_FRONTEND=noninteractive apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git-core
+apk add --no-cache git musl-dev gcc
 
 cd /tmp
 git clone -b "${DIN_REFSPEC}" "${DIN_SU_EXEC_URL}" su-exec
@@ -32,7 +31,7 @@ chown "${DIN_UID}:${DIN_GID}" /din_config/su-exec
 
 class SetupApp(dockerutils.BasicDockerApp):
     DEFAULT_SU_EXEC_URL = "https://github.com/ncopa/su-exec.git"
-    DEFAULT_IMAGE = "ubuntu:16.04"
+    DEFAULT_IMAGE = "alpine:3.6"
 
     @classmethod
     def _parse_args(cls, argv):
@@ -51,6 +50,8 @@ class SetupApp(dockerutils.BasicDockerApp):
                             help="Git URL to su-exec repository")
         parser.add_argument('--name',
                             help="Name of the container")
+        parser.add_argument('--home',
+                            help="Override path to home directory")
         parser.add_argument('--auto-pull',
                             dest="auto_pull",
                             action="store_true",
@@ -75,7 +76,7 @@ class SetupApp(dockerutils.BasicDockerApp):
         cfg_path = os.path.join(home, '.config', 'docker_inside')
         os.makedirs(cfg_path, 0o755, exist_ok=True)
         script_pack = dockerutils.tar_pack({
-            "entrypoint.bash": {
+            "entrypoint.sh": {
                 "payload": SETUP_SCRPT,
                 "mode": 0o755,
             }
@@ -93,7 +94,7 @@ class SetupApp(dockerutils.BasicDockerApp):
         }
         cid = self._dc.create_container(
             self.DEFAULT_IMAGE,
-            command="/entrypoint.bash",
+            command="/entrypoint.sh",
             host_config=hostcfg,
             environment=env,
             name=name,
