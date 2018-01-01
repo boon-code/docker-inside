@@ -202,14 +202,15 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
     @classmethod
     def _parse_args(cls, argv):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--verbose',
-                            dest='loglevel',
-                            action='store_const',
-                            const=logging.DEBUG)
-        parser.add_argument('--quiet',
-                            dest='loglevel',
-                            action='store_const',
-                            const=logging.ERROR)
+        loglevel_group = parser.add_mutually_exclusive_group()
+        loglevel_group.add_argument('--verbose',
+                                    dest='loglevel',
+                                    action='store_const',
+                                    const=logging.DEBUG)
+        loglevel_group.add_argument('--quiet',
+                                    dest='loglevel',
+                                    action='store_const',
+                                    const=logging.ERROR)
         parser.add_argument('--debug',
                             action='store_true',
                             default=False,
