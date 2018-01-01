@@ -19,11 +19,7 @@ logging.basicConfig(
 
 INSIDE_SCRIPT = b"""#!/bin/sh
 
-if [ -e /bin/busybox ]; then
-    BUSYBOX=1
-else
-    BUSYBOX=0
-fi
+BUSYBOX=0
 
 _fail() {
     echo "ERROR: $@" >&2
@@ -34,6 +30,31 @@ _debug() {
     if [ "${DIN_VERBOSE}" = "1" ]; then
         echo "DEBUG: $@" >&2
     fi
+}
+
+_try_busybox_applets() {
+    local applet=""
+
+    if [ ! -e /bin/busybox ]; then
+        _debug "busybox not found"
+        return 1
+    else
+        _debug "busybox found - checking applets"
+    fi
+
+    for applet in "adduser" "addgroup"; do
+        busybox --list | grep -F "${applet}" >/dev/null 2>/dev/null
+        if [ $? -eq 0 ]; then
+            _debug "found applet '${applet}'"
+        else
+            _debug "busybox is missing applet '${applet}'"
+            return 1
+        fi
+    done
+
+    _debug "All busybox applets found"
+
+    return 0
 }
 
 _add_group() {
@@ -88,6 +109,10 @@ main() {
 
     if [ "${DIN_VERBOSE}" = "1" ]; then
         echo ""
+    fi
+
+    if _try_busybox_applets ; then
+        BUSYBOX=1
     fi
 
     _debug "BUSYBOX is ${BUSYBOX}"
