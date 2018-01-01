@@ -194,6 +194,8 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                             dest='ports',
                             action='append',
                             help="Publish a container's port(s) to the host ([ip:]hostp:contp)")
+        parser.add_argument('--shm-size',
+                            help="Size of /dev/shm, default value is 64MB")
         parser.add_argument('-w', '--workdir',
                             help="Working directory inside the container")
 
@@ -336,6 +338,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
             devices=self._args.devices,
             ports=ports,
             working_dir=self._args.workdir,
+            shm_size=self._args.shm_size,
             tty=True,
             stdin_open=True,
         )
