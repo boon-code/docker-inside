@@ -171,6 +171,30 @@ main $@
 class DockerInsideApp(dockerutils.BasicDockerApp):
     SCRIPT_NAME = "docker_inside.sh"
 
+    @staticmethod
+    def _add_docker_run_options(parser):
+        parser.add_argument('--add-host',
+                            help="Add a custom host-to-IP mapping (host:ip) (default [])")
+        parser.add_argument('--cap-add',
+                            action='append',
+                            help="Add Linux capabilities (default [])")
+        parser.add_argument('--cap-drop',
+                            action='append',
+                            help="Drop Linux capabilities (default [])")
+        parser.add_argument('--device',
+                            dest="devices",
+                            action='append',
+                            help="Add a host device to the container (default [])")
+        parser.add_argument('-e', '--env',
+                            action='append',
+                            help="Set environment variables (default [])")
+        parser.add_argument('-p', '--publish',
+                            dest='ports',
+                            action='append',
+                            help="Publish a container's port(s) to the host ([ip:]hostp:contp)")
+        parser.add_argument('-w', '--workdir',
+                            help="Working directory inside the container")
+
     @classmethod
     def _parse_args(cls, argv):
         parser = argparse.ArgumentParser()
@@ -210,6 +234,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         parser.add_argument('args',
                             nargs="*",
                             help="Arguments for command cmd")
+        cls._add_docker_run_options(parser)
         parser.set_defaults(loglevel=logging.INFO)
         args = parser.parse_args(args=argv)
         return args
