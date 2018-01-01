@@ -5,7 +5,7 @@ import tempfile
 import collections.abc
 
 import docker
-import docker.tls
+import docker.errors
 
 
 class ContainerError(RuntimeError):
@@ -58,12 +58,50 @@ def _assert_path_exists(path, type_=None):
             raise InvalidPath(abs_path, '')
 
 
-def env_list_to_dict(env_list):
+def env_list_to_dict(env_list, host_env=None):
+    """Generator to convert environemnt list to dictionary
+
+    :param env_list: List of environment variables in format 'VARIABLE=VALUE'
+    :param host_env: Optional host environment will be looked up, if '=VALUE'
+                     part is missing.
+    """
+    if host_env is None:
+        host_env = {}
     if env_list is None:
         env_list = []
     for i in env_list:
-        key, value = i.split("=", 1)
-        yield key, value
+        tmp = i.split("=", 1)
+        if len(tmp) == 2:
+            yield tmp[0], tmp[1]
+        else:
+            if tmp[0] in host_env.keys():
+                yield tmp[0], host_env[tmp[0]]
+
+
+def split_port_normalized(port_spec, default_protocol='tcp'):
+    v = port_spec.split('/', 1)
+    if len(v) == 2:
+        return int(v[0]), v[1]
+    else:
+        return int(v[0]), default_protocol
+
+
+def normalize_port(port_spec, **kwargs):
+    return "{0}/{1}".format(*split_port_normalized(port_spec, **kwargs))
+
+
+def port_list_to_dict(port_list):
+    if port_list is None:
+        port_list = []
+    for i in port_list:
+        tmp = i.split(":", 2)
+        if len(tmp) == 3:
+            host_map = (tmp[0], split_port_normalized(tmp[1])[0])
+            yield normalize_port(tmp[2]), host_map
+        elif len(tmp) == 2:
+            yield normalize_port(tmp[1]), split_port_normalized(tmp[0])[0]
+        else:
+            yield normalize_port(tmp[0]), split_port_normalized(tmp[0])[0]
 
 
 def tar_pack(data, write_mode='w', default_mode=0o640):
@@ -125,17 +163,6 @@ def linux_pjoin(*args):
 class BasicDockerApp(object):
 
     @classmethod
-    def _create_tls_config(cls, cert_path):
-        client_cert = (os.path.join(cert_path, 'cert.pem'),
-                       os.path.join(cert_path, 'key.pem'))
-        cfg = docker.tls.TLSConfig(
-            client_cert=client_cert,
-            ca_cert=os.path.join(cert_path, 'ca.pem'),
-            verify=True
-        )
-        return cfg
-
-    @classmethod
     def normalize_image(cls, image_spec):
         tmp = image_spec.split(":", 1)
         if len(tmp) == 1:
@@ -156,10 +183,6 @@ class BasicDockerApp(object):
     @staticmethod
     def combine_image_spec(image, tag):
         return ":".join((image, tag))
-
-    @classmethod
-    def _create_docker_client(cls, params):
-        return docker.Client(**params)
 
     @staticmethod
     def _assert_state(cname, cfg, *allowed_states):
@@ -186,35 +209,18 @@ class BasicDockerApp(object):
 
     def __init__(self, log, env=None):
         self._log = log
-        _, params = self._get_client_config(env)
-        self._dc = self._create_docker_client(params)
+        self._env = env
+        self._dc = docker.from_env(environment=env)
 
     def _assert_image_available(self, image_spec, auto_pull=False):
         img, tag = self.normalize_image(image_spec)
-        image_spec = self.combine_image_spec(img, tag)
-        r = self._dc.images(image_spec)
-        if not r:
-            if auto_pull:
-                self._dc.pull(img, tag)
-                r = self._dc.images(image_spec)
-                if not r:
-                    raise MissingImageError(img, tag, True)
-            else:
-                raise MissingImageError(img, tag, False)
-
-    def _get_client_config(self, env=None):
-        if env is None:
-            env = os.environ
-        kw = dict()
+        image_spec = self.combine_image_spec(img, tag)  # ensure full image spec
         try:
-            tls_verify = env['DOCKER_TLS_VERIFY']
-            self._log.debug("Found env. variable DOCKER_TLS_VERIFY: {0}".format(tls_verify))
-            kw['base_url'] = env['DOCKER_HOST']
-            self._log.debug("Found env. variable DOCKER_HOST: {0}".format(kw['base_url']))
-            cert_p = env['DOCKER_CERT_PATH']
-            self._log.debug("Found env. variable DOCKER_CERT_PATH: {0}".format(cert_p))
-            kw['tls'] = self._create_tls_config(cert_p)
-            return True, kw
-        except KeyError:
-            self._log.debug("Use local docker installation")
-            return False, dict()
+            self._dc.images.get(image_spec)
+            self._log.debug("Found image '{0}' locally".format(image_spec))
+        except docker.errors.ImageNotFound:
+            if auto_pull:
+                self._log.warning("Image '{0}' not found locally -> pull it".format(image_spec))
+                self._dc.images.pull(img, tag)
+            else:
+                raise

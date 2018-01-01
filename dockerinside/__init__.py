@@ -6,6 +6,8 @@ import logging
 import argparse
 
 import argcomplete
+import docker
+import docker.errors
 import dockerpty
 
 from . import dockerutils
@@ -243,7 +245,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         log = logging.getLogger("DockerInside")
         dockerutils.BasicDockerApp.__init__(self, log, env)
         self._args = None
-        self._cid = None
+        self._cobj = None
 
     def _adapt_log_level(self):
         if not self._args.debug:
@@ -261,14 +263,11 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         groups_txt = ",".join([i.gr_name for i in groups])
         group_env = "\n".join(["{0},{1}".format(i.gr_name, i.gr_gid) for i in groups])
         self._log.debug("All groups: {0}".format(groups_txt))
+        env = dict(dockerutils.env_list_to_dict(self._args.env, self._env))
         try:
-            env = dict(dockerutils.env_list_to_dict(image_info["Config"]["Env"]))
-            if env is None:
-                self._log.debug("Empty environment")
-                env = {}
+            env.update(dockerutils.env_list_to_dict(image_info["Config"]["Env"]))
         except KeyError:
             self._log.exception("No key 'Env' in image info")
-            env = {}
         env.update({
             "DIN_UID": uid,
             "DIN_USER": username,
@@ -304,7 +303,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
     def _inside(self):
         """Run container with user environment"""
         self._assert_image_available(self._args.image, self._args.auto_pull)
-        image_info = self._dc.inspect_image(self._args.image)
+        image_info = self._dc.images.get(self._args.image).attrs
         pack_conf = {
             self.SCRIPT_NAME: {
                 "payload": INSIDE_SCRIPT,
@@ -320,24 +319,27 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                 }
             })
         script_pack = dockerutils.tar_pack(pack_conf)
-        hostcfg = self._dc.create_host_config(
-            binds=self.volume_args_to_dict(self._args.volumes)
-        )
+        ports = dict(dockerutils.port_list_to_dict(self._args.ports))
         env = self._prepare_environment(image_info)
         cmd = self._prepare_command(image_info)
         entrypoint = dockerutils.linux_pjoin('/', self.SCRIPT_NAME)
         self._log.debug("New entrypoint: {0}".format(entrypoint))
-        self._cid = self._dc.create_container(
+        self._cobj = self._dc.containers.create(
             self._args.image,
             command=cmd,
-            host_config=hostcfg,
+            volumes=dict(self.volume_args_to_dict(self._args.volumes)),
             environment=env,
             entrypoint=entrypoint,
             name=self._args.name,
+            cap_add=self._args.cap_add,
+            cap_drop=self._args.cap_drop,
+            devices=self._args.devices,
+            ports=ports,
+            working_dir=self._args.workdir,
             tty=True,
             stdin_open=True,
         )
-        self._dc.put_archive(self._cid, '/', script_pack)
+        self._cobj.put_archive('/', script_pack)
         self._start()
 
     @staticmethod
@@ -345,21 +347,21 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         return os.isatty(sys.stdin.fileno())
 
     def _start(self):
-        self._log.info("Starting container: {0}".format(self._cid['Id']))
+        self._log.info("Starting container: {0}".format(self._cobj.id))
         if self._isatty():
-            dockerpty.start(self._dc, self._cid['Id'])
+            dockerpty.start(self._dc.api, self._cobj.id)
         else:
-            self._dc.start(self._cid)
-        self._dc.wait(self._cid)
-        self._log.info("Container {0} stopped".format(self._cid['Id']))
+            self._cobj.start()
+        self._cobj.wait()
+        self._log.info("Container {0} stopped".format(self._cobj.id))
 
     def cleanup(self):
-        if self._cid is None:
+        if self._cobj is None:
             self._log.debug("'Inside' containter has already been deleted")
             return
-        self._dc.stop(self._cid)
-        self._dc.remove_container(self._cid)
-        self._cid = None
+        self._cobj.stop()
+        self._cobj.remove()
+        self._cobj = None
 
     def run(self, argv, capture_stdout=False):
         self._args = self._parse_args(argv)
@@ -367,16 +369,14 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         try:
             self._inside()
             if capture_stdout:
-                return self._dc.logs(self._cid, stderr=False)
+                return self._cobj.logs(stderr=False)
         except dockerutils.InvalidPath as e:
             logging.exception("{0} '{1}' doesn't exist".format(e.type_, e.path))
-        except dockerutils.MissingImageError as e:
-            if not e.pull:
-                logging.exception(
-                    "Missing image {0}: try pulling the image before?".format(e.fullname)
-                )
+        except docker.errors.ImageNotFound:
+            if self._args.auto_pull:
+                logging.exception("Image not found locally: try pulling the image before?")
             else:
-                logging.exception("Image {0} doesn't exist".format(e.fullname))
+                logging.exception("Image not found")
         except Exception:
             logging.exception("Failed to run inside()")
         finally:

@@ -3,6 +3,8 @@ import sys
 import argparse
 import logging
 
+import docker
+import docker.errors
 import dockerpty
 
 from .. import dockerutils
@@ -65,6 +67,7 @@ class SetupApp(dockerutils.BasicDockerApp):
 
     def __init__(self, env=None):
         log = logging.getLogger("DockerInside.Setup")
+        self._args = None
         dockerutils.BasicDockerApp.__init__(self, log, env)
 
     def setup(self, url, home=None, auto_pull=False, name=None, refspec=None):
@@ -81,31 +84,29 @@ class SetupApp(dockerutils.BasicDockerApp):
                 "mode": 0o755,
             }
         })
-        hostcfg = self._dc.create_host_config(
-            binds=self.volume_args_to_dict([
-                "{0}:/din_config".format(cfg_path)
-            ])
-        )
+        volumes = self.volume_args_to_dict([
+            "{0}:/din_config".format(cfg_path)
+        ])
         env = {
             "DIN_UID": os.getuid(),
             "DIN_GID": os.getgid(),
             "DIN_SU_EXEC_URL": url,
             "DIN_REFSPEC": refspec,
         }
-        cid = self._dc.create_container(
+        cobj = self._dc.containers.create(
             self.DEFAULT_IMAGE,
             command="/entrypoint.sh",
-            host_config=hostcfg,
+            volumes=volumes,
             environment=env,
             name=name,
         )
         try:
-            self._dc.put_archive(cid, '/', script_pack)
-            dockerpty.start(self._dc, cid['Id'])
-            self._dc.wait(cid)
+            cobj.put_archive('/', script_pack)
+            dockerpty.start(self._dc.api, cobj.id)
+            cobj.wait()
         finally:
-            self._dc.stop(cid)
-            self._dc.remove_container(cid)
+            cobj.stop()
+            cobj.remove()
 
     def run(self, argv):
         self._args = self._parse_args(argv)
@@ -116,13 +117,8 @@ class SetupApp(dockerutils.BasicDockerApp):
                        name=self._args.name)
         except dockerutils.InvalidPath as e:
             logging.exception("{0} '{1}' doesn't exist".format(e.type_, e.path))
-        except dockerutils.MissingImageError as e:
-            if not e.pull:
-                logging.exception(
-                    "Missing image {0}: try pulling the image before?".format(e.fullname)
-                )
-            else:
-                logging.exception("Image {0} doesn't exist".format(e.fullname))
+        except docker.errors.ImageNotFound:
+            logging.exception("Image '{0}' not found".format(self.DEFAULT_IMAGE))
         except Exception:
             logging.exception("Failed to run setup()")
 

@@ -33,7 +33,6 @@ setup(
     },
     install_requires=["argparse>=1.4.0",
                       "argcomplete>=1.4.1",
-                      "blessings>=1.6",
-                      "docker-py>=1.5.0",
+                      "docker>=2.7.0",
                       "dockerpty>=0.4.1"],
 )

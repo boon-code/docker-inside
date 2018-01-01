@@ -3,8 +3,6 @@ import sys
 import logging
 import tempfile
 import pytest
-import docker
-import docker.tls
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 SRC_DIR = os.path.realpath(os.path.join(THIS_DIR, '..'))
@@ -15,15 +13,18 @@ def mock_basic_docker_app(env):
     from dockerinside.dockerutils import BasicDockerApp
 
     class MockBasicDockerApp(BasicDockerApp):
-        @classmethod
-        def _create_docker_client(cls, params):
-            return None
-
         def __init__(self):
             log = logging.getLogger("MockBasicDockerApp")
             BasicDockerApp.__init__(self, log, env)
 
     return MockBasicDockerApp()
+
+
+@pytest.fixture()
+def du():
+    """dockerutils module"""
+    from dockerinside import dockerutils
+    return dockerutils
 
 
 @pytest.fixture(scope='module')
@@ -38,42 +39,7 @@ def cert_mock_dir():
     td.cleanup()
 
 
-# noinspection PyShadowingNames
-def test_get_client_config_with_env(cert_mock_dir):
-    env = {
-        'DOCKER_TLS_VERIFY': "1",
-        'DOCKER_HOST': "localhost",
-        'DOCKER_CERT_PATH': cert_mock_dir,
-    }
-    dut = mock_basic_docker_app(env)
-    ret, params = dut._get_client_config(env)
-    assert ret, "All settings must be passed"
-    assert params['base_url'] == "localhost"
-    assert isinstance(params['tls'], docker.tls.TLSConfig)
-
-
-# noinspection PyShadowingNames
-def test_get_client_config_with_incomplete_env(cert_mock_dir):
-    env = {
-        'DOCKER_HOST': "localhost",
-        'DOCKER_CERT_PATH': cert_mock_dir,
-    }
-    dut = mock_basic_docker_app(env)
-    ret, params = dut._get_client_config(env)
-    assert not ret, "Default settings with local docker client"
-    assert ('base_url', 'tls') not in params.keys()
-
-
-def test_get_client_config_without_env():
-    env = {}
-    dut = mock_basic_docker_app(env)
-    ret, params = dut._get_client_config(env)
-    assert not ret, "Default settings with local docker client"
-    assert ('base_url', 'tls') not in params.keys()
-
-
-def test_split_and_filter():
-    from dockerinside import dockerutils as du
+def test_split_and_filter(du):
     t1 = list(du._split_and_filter(["/", "/", "a", "b", "c", "/", "/"]))
     assert t1 == ["a", "b", "c"]
     t2 = list(du._split_and_filter(["a", "b", "c"]))
