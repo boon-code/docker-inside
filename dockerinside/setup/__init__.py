@@ -77,6 +77,7 @@ class SetupApp(dockerutils.BasicDockerApp):
             refspec = 'master'
         self._assert_image_available(self.DEFAULT_IMAGE, auto_pull)
         cfg_path = os.path.join(home, '.config', 'docker_inside')
+        self._log.debug("Configuration directory (host): {0}".format(cfg_path))
         os.makedirs(cfg_path, 0o755, exist_ok=True)
         script_pack = dockerutils.tar_pack({
             "entrypoint.sh": {
@@ -113,8 +114,10 @@ class SetupApp(dockerutils.BasicDockerApp):
         logging.getLogger().setLevel(self._args.loglevel)
         try:
             self.setup(self._args.url,
+                       home=self._args.home,
                        auto_pull=self._args.auto_pull,
-                       name=self._args.name)
+                       name=self._args.name,
+                       refspec=self._args.refspec)
         except dockerutils.InvalidPath as e:
             logging.exception("{0} '{1}' doesn't exist".format(e.type_, e.path))
         except docker.errors.ImageNotFound:
