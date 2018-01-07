@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.0] - 2018-01-07
+### Added
+- Update `README.md` how to use the project
+- Integrate with *Travis CI* to automate testing and project health
+
 ## [0.2.0] - 2018-01-07
 ### Added
 - Run a basic test for `ubuntu`, `busybox`, `alpine`, `centos` and `fedora`

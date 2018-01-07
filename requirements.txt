@@ -6,7 +6,6 @@ docker==2.7.0
 docker-pycreds==0.2.1
 dockerpty==0.4.1
 idna==2.6
-pkg-resources==0.0.0
 pluggy==0.6.0
 py==1.5.2
 pytest==3.3.1
