@@ -40,20 +40,28 @@ def test_argument_more_args(tapp):
 def test_simple_setup_docker(tapp):
     txt = tapp.run(
         ['--auto-pull',
+         '-e', "TEXT=Hello, world",
          '--name=di_simple_setup_test',
          'ubuntu:16.04',
          'echo',
-         "Hello, world"],
+         "${TEXT}"],
         capture_stdout=True
     )
     assert b'Hello, world\r\n' == txt
 
 
-def test_user_id_docker(tapp):
+@pytest.mark.parametrize("image", [
+    'ubuntu:14.04', 'ubuntu:16.04', 'ubuntu:latest',
+    'alpine:3.6', 'alpine:latest',
+    'busybox:latest',
+    'centos:latest',
+    'fedora:latest',
+])
+def test_user_id_docker(tapp, image):
     txt = tapp.run(
         ['--auto-pull',
          '--name=di_simple_setup_test',
-         'ubuntu:16.04',
+         image,
          '--',
          'id',
          "-u"],

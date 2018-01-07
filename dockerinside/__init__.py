@@ -6,6 +6,8 @@ import logging
 import argparse
 
 import argcomplete
+import docker
+import docker.errors
 import dockerpty
 
 from . import dockerutils
@@ -57,6 +59,23 @@ _try_busybox_applets() {
     return 0
 }
 
+_has_command() {
+    local cmd="$1"
+    local path=""
+
+    path="$(command -v "${cmd}" 2>/dev/null)"
+    if [ $? -ne 0 ] || [ -z "${path}" ]; then
+        _debug "Command ${cmd} not found"
+        return 1
+    elif [ -L "${path}" ]; then  # centos...
+        _debug "Command ${cmd} resolves to path ${path} which is a link"
+        return 1
+    else
+        _debug "Resolved command ${cmd} to path ${path}"
+        return 0
+    fi
+}
+
 _add_group() {
     local grp_name="$1"
     local grp_id="$2"
@@ -70,9 +89,14 @@ _add_group() {
             if [ ${BUSYBOX} -eq 1 ]; then
                 /bin/busybox addgroup -g "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
                 ret=$?
-            else
+            elif _has_command "addgroup" ; then
                 addgroup --gid "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
                 ret=$?
+            elif _has_command "groupadd" ; then
+                groupadd --gid "${grp_id}" "${grp_name}" > /dev/null 2>/dev/null
+                ret=$?
+            else
+                _fail "No command found to create a group"
             fi
             [ $ret -eq 0 ] || _fail "Couldn't create group '${grp_name}': errno=$ret"
             return 0
@@ -124,10 +148,10 @@ main() {
     if [ $? -ne 0 ]; then
         local ret=-1
         if [ ${BUSYBOX} -eq 1 ]; then
-            /bin/busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" \
-                                 >/dev/null 2>/dev/null
+            busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" \
+                    >/dev/null 2>/dev/null
             ret=$?
-        else
+        elif _has_command "useradd" ; then
             useradd --gid "${DIN_GID}" \
                     --uid "${DIN_UID}" \
                     --shell /bin/sh \
@@ -135,6 +159,8 @@ main() {
                     --no-user-group \
                     "${DIN_USER}" >/dev/null 2>/dev/null
             ret=$?
+        else
+            _fail "No command found to add a user"
         fi
         [ $? -eq 0 ] || _fail "Couldn't create user ${DIN_USER}: errno=$?"
     else
@@ -146,7 +172,18 @@ main() {
         local gid="${elm#*,}"
 
         if _add_group "${name}" "${gid}" ; then
-            adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
+            if [ ${BUSYBOX} -eq 1 ]; then
+                busybox adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
+                ret=$?
+            elif _has_command "adduser" ; then
+                adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
+                ret=$?
+            elif _has_command "usermod" ; then
+                usermod --append --groups "${name}" "${DIN_USER}"
+                ret=$?
+            else
+                _fail "No command found to add user to group"
+            fi
             [ $? -eq 0 ] || _fail "Couldn't add user ${DIN_USER} to group ${name}"
         fi
     done
@@ -156,6 +193,13 @@ main() {
     echo "#!/bin/sh" > /docker_inside_inner.sh
     echo "exec ${DIN_ENTRYPOINT} $@" >> /docker_inside_inner.sh
     chmod a+rx /docker_inside_inner.sh
+
+    if [ "${DIN_CREATE_HOME}" = "1" ] && [ ! -d "/home/${DIN_USER}" ]; then
+        _debug "Create temporary home directory: /home/${DIN_USER}"
+        mkdir -p "/home/${DIN_USER}"
+        chown "${DIN_USER}:${DIN_GROUP}" "/home/${DIN_USER}"
+        chmod 0700 "/home/${DIN_USER}"
+    fi
 
     if try_su_exec ; then
         exec su-exec "${DIN_USER}" "/docker_inside_inner.sh"
@@ -171,17 +215,44 @@ main $@
 class DockerInsideApp(dockerutils.BasicDockerApp):
     SCRIPT_NAME = "docker_inside.sh"
 
+    @staticmethod
+    def _add_docker_run_options(parser):
+        parser.add_argument('--add-host',
+                            help="Add a custom host-to-IP mapping (host:ip) (default [])")
+        parser.add_argument('--cap-add',
+                            action='append',
+                            help="Add Linux capabilities (default [])")
+        parser.add_argument('--cap-drop',
+                            action='append',
+                            help="Drop Linux capabilities (default [])")
+        parser.add_argument('--device',
+                            dest="devices",
+                            action='append',
+                            help="Add a host device to the container (default [])")
+        parser.add_argument('-e', '--env',
+                            action='append',
+                            help="Set environment variables (default [])")
+        parser.add_argument('-p', '--publish',
+                            dest='ports',
+                            action='append',
+                            help="Publish a container's port(s) to the host ([ip:]hostp:contp)")
+        parser.add_argument('--shm-size',
+                            help="Size of /dev/shm, default value is 64MB")
+        parser.add_argument('-w', '--workdir',
+                            help="Working directory inside the container")
+
     @classmethod
     def _parse_args(cls, argv):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--verbose',
-                            dest='loglevel',
-                            action='store_const',
-                            const=logging.DEBUG)
-        parser.add_argument('--quiet',
-                            dest='loglevel',
-                            action='store_const',
-                            const=logging.ERROR)
+        loglevel_group = parser.add_mutually_exclusive_group()
+        loglevel_group.add_argument('--verbose',
+                                    dest='loglevel',
+                                    action='store_const',
+                                    const=logging.DEBUG)
+        loglevel_group.add_argument('--quiet',
+                                    dest='loglevel',
+                                    action='store_const',
+                                    const=logging.ERROR)
         parser.add_argument('--debug',
                             action='store_true',
                             default=False,
@@ -193,10 +264,17 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                             action="append",
                             default=[],
                             help="Bind mounts a volume")
-        parser.add_argument('-H', '--mount-home',
-                            action="store_true",
-                            default=False,
-                            help="Mount home directory")
+        mnthome_grp = parser.add_mutually_exclusive_group()
+        mnthome_grp.add_argument('-H', '--mount-home',
+                                 action="store_true",
+                                 default=False,
+                                 help="Mount home directory")
+        mnthome_grp.add_argument('--mount-as-home',
+                                 help="Mount this directory as home")
+        mnthome_grp.add_argument('--tmp-home',
+                                 action='store_true',
+                                 default=False,
+                                 help="Create a temporary home directory")
         parser.add_argument('--auto-pull',
                             dest="auto_pull",
                             action="store_true",
@@ -210,6 +288,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         parser.add_argument('args',
                             nargs="*",
                             help="Arguments for command cmd")
+        cls._add_docker_run_options(parser)
         parser.set_defaults(loglevel=logging.INFO)
         args = parser.parse_args(args=argv)
         return args
@@ -218,7 +297,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         log = logging.getLogger("DockerInside")
         dockerutils.BasicDockerApp.__init__(self, log, env)
         self._args = None
-        self._cid = None
+        self._cobj = None
 
     def _adapt_log_level(self):
         if not self._args.debug:
@@ -236,14 +315,11 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         groups_txt = ",".join([i.gr_name for i in groups])
         group_env = "\n".join(["{0},{1}".format(i.gr_name, i.gr_gid) for i in groups])
         self._log.debug("All groups: {0}".format(groups_txt))
+        env = dict(dockerutils.env_list_to_dict(self._args.env, self._env))
         try:
-            env = dict(dockerutils.env_list_to_dict(image_info["Config"]["Env"]))
-            if env is None:
-                self._log.debug("Empty environment")
-                env = {}
+            env.update(dockerutils.env_list_to_dict(image_info["Config"]["Env"]))
         except KeyError:
             self._log.exception("No key 'Env' in image info")
-            env = {}
         env.update({
             "DIN_UID": uid,
             "DIN_USER": username,
@@ -273,20 +349,24 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         if self._args.cmd:
             cmd = [self._args.cmd]
             cmd.extend(self._args.args)
-        self._log.debug("container command: {0}".format(" ".join(cmd)))
+        if cmd is None:
+            self._log.debug("command is null")
+        else:
+            self._log.debug("container command: {0}".format(" ".join(cmd)))
         return cmd
 
     def _inside(self):
         """Run container with user environment"""
         self._assert_image_available(self._args.image, self._args.auto_pull)
-        image_info = self._dc.inspect_image(self._args.image)
+        image_info = self._dc.images.get(self._args.image).attrs
         pack_conf = {
             self.SCRIPT_NAME: {
                 "payload": INSIDE_SCRIPT,
                 "mode": 0o755,
             }
         }
-        suexec = os.path.join(os.path.expanduser('~'), '.config', 'docker_inside', 'su-exec')
+        home_dir = os.path.expanduser('~')
+        suexec = os.path.join(home_dir, '.config', 'docker_inside', 'su-exec')
         if os.path.exists(suexec):
             pack_conf.update({
                 "/bin/su-exec": {
@@ -295,24 +375,43 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                 }
             })
         script_pack = dockerutils.tar_pack(pack_conf)
-        hostcfg = self._dc.create_host_config(
-            binds=self.volume_args_to_dict(self._args.volumes)
-        )
+        ports = dict(dockerutils.port_list_to_dict(self._args.ports))
         env = self._prepare_environment(image_info)
         cmd = self._prepare_command(image_info)
+        volumes = dict(self.volume_args_to_dict(self._args.volumes))
+        if self._args.mount_home:
+            self._log.debug("Mount real home directory")
+            volumes[home_dir] = {
+                "bind": home_dir,
+                "mode": 'rw',
+            }
+        elif self._args.mount_as_home is not None:
+            self._log.debug("Mount fake home directory: {0}".format(self._args.mount_as_home))
+            volumes[self._args.mount_as_home] = {
+                "bind": home_dir,
+                "mode": 'rw'
+            }
+        elif self._args.tmp_home:
+            env['DIN_CREATE_HOME'] = "1"
         entrypoint = dockerutils.linux_pjoin('/', self.SCRIPT_NAME)
         self._log.debug("New entrypoint: {0}".format(entrypoint))
-        self._cid = self._dc.create_container(
+        self._cobj = self._dc.containers.create(
             self._args.image,
             command=cmd,
-            host_config=hostcfg,
+            volumes=volumes,
             environment=env,
             entrypoint=entrypoint,
             name=self._args.name,
+            cap_add=self._args.cap_add,
+            cap_drop=self._args.cap_drop,
+            devices=self._args.devices,
+            ports=ports,
+            working_dir=self._args.workdir,
+            shm_size=self._args.shm_size,
             tty=True,
             stdin_open=True,
         )
-        self._dc.put_archive(self._cid, '/', script_pack)
+        self._cobj.put_archive('/', script_pack)
         self._start()
 
     @staticmethod
@@ -320,21 +419,21 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         return os.isatty(sys.stdin.fileno())
 
     def _start(self):
-        self._log.info("Starting container: {0}".format(self._cid['Id']))
+        self._log.info("Starting container: {0}".format(self._cobj.id))
         if self._isatty():
-            dockerpty.start(self._dc, self._cid['Id'])
+            dockerpty.start(self._dc.api, self._cobj.id)
         else:
-            self._dc.start(self._cid)
-        self._dc.wait(self._cid)
-        self._log.info("Container {0} stopped".format(self._cid['Id']))
+            self._cobj.start()
+        self._cobj.wait()
+        self._log.info("Container {0} stopped".format(self._cobj.id))
 
     def cleanup(self):
-        if self._cid is None:
+        if self._cobj is None:
             self._log.debug("'Inside' containter has already been deleted")
             return
-        self._dc.stop(self._cid)
-        self._dc.remove_container(self._cid)
-        self._cid = None
+        self._cobj.stop()
+        self._cobj.remove()
+        self._cobj = None
 
     def run(self, argv, capture_stdout=False):
         self._args = self._parse_args(argv)
@@ -342,16 +441,14 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         try:
             self._inside()
             if capture_stdout:
-                return self._dc.logs(self._cid, stderr=False)
+                return self._cobj.logs(stderr=False)
         except dockerutils.InvalidPath as e:
             logging.exception("{0} '{1}' doesn't exist".format(e.type_, e.path))
-        except dockerutils.MissingImageError as e:
-            if not e.pull:
-                logging.exception(
-                    "Missing image {0}: try pulling the image before?".format(e.fullname)
-                )
+        except docker.errors.ImageNotFound:
+            if self._args.auto_pull:
+                logging.exception("Image not found locally: try pulling the image before?")
             else:
-                logging.exception("Image {0} doesn't exist".format(e.fullname))
+                logging.exception("Image not found")
         except Exception:
             logging.exception("Failed to run inside()")
         finally:
