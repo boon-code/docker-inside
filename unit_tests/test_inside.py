@@ -53,7 +53,9 @@ def test_simple_setup_docker(tapp):
 @pytest.mark.parametrize("image", [
     'ubuntu:14.04', 'ubuntu:16.04', 'ubuntu:latest',
     'alpine:3.6', 'alpine:latest',
-    'busybox:latest'
+    'busybox:latest',
+    'centos:latest',
+    'fedora:latest',
 ])
 def test_user_id_docker(tapp, image):
     txt = tapp.run(
