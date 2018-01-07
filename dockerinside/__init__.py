@@ -59,6 +59,23 @@ _try_busybox_applets() {
     return 0
 }
 
+_has_command() {
+    local cmd="$1"
+    local path=""
+
+    path="$(command -v "${cmd}" 2>/dev/null)"
+    if [ $? -ne 0 ] || [ -z "${path}" ]; then
+        _debug "Command ${cmd} not found"
+        return 1
+    elif [ -L "${path}" ]; then  # centos...
+        _debug "Command ${cmd} resolves to path ${path} which is a link"
+        return 1
+    else
+        _debug "Resolved command ${cmd} to path ${path}"
+        return 0
+    fi
+}
+
 _add_group() {
     local grp_name="$1"
     local grp_id="$2"
@@ -72,9 +89,14 @@ _add_group() {
             if [ ${BUSYBOX} -eq 1 ]; then
                 /bin/busybox addgroup -g "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
                 ret=$?
-            else
+            elif _has_command "addgroup" ; then
                 addgroup --gid "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
                 ret=$?
+            elif _has_command "groupadd" ; then
+                groupadd --gid "${grp_id}" "${grp_name}" > /dev/null 2>/dev/null
+                ret=$?
+            else
+                _fail "No command found to create a group"
             fi
             [ $ret -eq 0 ] || _fail "Couldn't create group '${grp_name}': errno=$ret"
             return 0
@@ -126,10 +148,10 @@ main() {
     if [ $? -ne 0 ]; then
         local ret=-1
         if [ ${BUSYBOX} -eq 1 ]; then
-            /bin/busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" \
-                                 >/dev/null 2>/dev/null
+            busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" \
+                    >/dev/null 2>/dev/null
             ret=$?
-        else
+        elif _has_command "useradd" ; then
             useradd --gid "${DIN_GID}" \
                     --uid "${DIN_UID}" \
                     --shell /bin/sh \
@@ -137,6 +159,8 @@ main() {
                     --no-user-group \
                     "${DIN_USER}" >/dev/null 2>/dev/null
             ret=$?
+        else
+            _fail "No command found to add a user"
         fi
         [ $? -eq 0 ] || _fail "Couldn't create user ${DIN_USER}: errno=$?"
     else
@@ -148,7 +172,18 @@ main() {
         local gid="${elm#*,}"
 
         if _add_group "${name}" "${gid}" ; then
-            adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
+            if [ ${BUSYBOX} -eq 1 ]; then
+                busybox adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
+                ret=$?
+            elif _has_command "adduser" ; then
+                adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
+                ret=$?
+            elif _has_command "usermod" ; then
+                usermod --append --groups "${name}" "${DIN_USER}"
+                ret=$?
+            else
+                _fail "No command found to add user to group"
+            fi
             [ $? -eq 0 ] || _fail "Couldn't add user ${DIN_USER} to group ${name}"
         fi
     done
