@@ -6,7 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.4] - 2018-01-09
+### Added
+- Fix documentation for pypi
+
 ## [0.3.1] - 2018-01-09
+### Added
 - Add missing information to setup.py
 
 ## [0.3.0] - 2018-01-07

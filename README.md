@@ -21,7 +21,7 @@ Install current *stable* version:
 
         pip install git+https://github.com/boon-code/docker-inside.git
 
-For convenience, `dockerinside` uses [`su-exec`](https://github.com/ncopa/su-exec) which is
+For convenience, `dockerinside` uses [su-exec](https://github.com/ncopa/su-exec) which is
 statically compiled using `alpine` and `musl-c` library. To build it, you have to run
 
         # use --auto-pull to download alpine image for compilation if it's not available
