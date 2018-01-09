@@ -4,7 +4,7 @@ import datetime
 YEAR = datetime.date.today().year
 
 __author__ = "Manuel Huber"
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __license__ = "MIT"
 __copyright__ = u'%s, Manuel Huber' % YEAR
 
@@ -12,6 +12,7 @@ setup(
     name='docker-inside',
     version=__version__,
     description='Run a docker container with you workspace and user',
+    url="https://github.com/boon-code/docker-inside",
     license=__license__,
     author=__author__,
     author_email='Manuel.h87@gmail.com',
