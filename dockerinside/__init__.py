@@ -140,6 +140,7 @@ main() {
     fi
 
     _debug "BUSYBOX is ${BUSYBOX}"
+    _debug "Current user: $(id -u)"
 
     _add_group "${DIN_GROUP}" "${DIN_GID}"
 
