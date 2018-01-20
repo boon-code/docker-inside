@@ -4,7 +4,7 @@ import datetime
 YEAR = datetime.date.today().year
 
 __author__ = "Manuel Huber"
-__version__ = "0.3.5"
+__version__ = "0.3.6"
 __license__ = "MIT"
 __copyright__ = u'%s, Manuel Huber' % YEAR
 
