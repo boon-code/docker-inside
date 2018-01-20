@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.7] - 2018-01-20
+### Added
+- Add automatic deployment to PyPI
+### Changed
+- Deploy all commits on master to test.pypi.org
+
 ## [0.3.6] - 2018-01-20
 ### Fixed
 - Install `pandoc` for travis CI deployment
