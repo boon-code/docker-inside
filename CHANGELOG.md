@@ -6,8 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [0.3.4] - 2018-01-09
+## [0.3.5] - 2018-01-20
 ### Added
+- Add `--switch-root` flag to enforce starting the container as root (`docker-inside` will still
+  switch to your user afterwards). Might become default behavior.
+
+## [0.3.4] - 2018-01-09
+### Fixed
 - Fix documentation for pypi
 
 ## [0.3.1] - 2018-01-09

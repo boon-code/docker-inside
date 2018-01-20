@@ -140,6 +140,7 @@ main() {
     fi
 
     _debug "BUSYBOX is ${BUSYBOX}"
+    _debug "Current user: $(id -u)"
 
     _add_group "${DIN_GROUP}" "${DIN_GID}"
 
@@ -280,6 +281,10 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                             action="store_true",
                             default=False,
                             help="Pull unavailable images automatically")
+        parser.add_argument('--switch-root',
+                            action="store_true",
+                            default=False,
+                            help="Switch to root user during docker run")
         parser.add_argument('image',
                             help="The image to run")
         parser.add_argument('cmd',
@@ -395,8 +400,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
             env['DIN_CREATE_HOME'] = "1"
         entrypoint = dockerutils.linux_pjoin('/', self.SCRIPT_NAME)
         self._log.debug("New entrypoint: {0}".format(entrypoint))
-        self._cobj = self._dc.containers.create(
-            self._args.image,
+        creation_kwargs = dict(
             command=cmd,
             volumes=volumes,
             environment=env,
@@ -411,6 +415,9 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
             tty=True,
             stdin_open=True,
         )
+        if self._args.switch_root:
+            creation_kwargs['user'] = "0"
+        self._cobj = self._dc.containers.create(self._args.image, **creation_kwargs)
         self._cobj.put_archive('/', script_pack)
         self._start()
 
