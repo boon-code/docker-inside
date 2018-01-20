@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.6] - 2018-01-20
+### Fixed
+- Install `pandoc` for travis CI deployment
+
 ## [0.3.5] - 2018-01-20
 ### Added
 - Add `--switch-root` flag to enforce starting the container as root (`docker-inside` will still
