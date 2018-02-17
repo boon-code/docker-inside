@@ -258,6 +258,10 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                             action='store_true',
                             default=False,
                             help="Enable debug output in shell script")
+        parser.add_argument('--init',
+                            action='store_true',
+                            default=False,
+                            help="Use tini init process to forward signals and reap zombies")
         parser.add_argument('--name',
                             help="Name of the container")
         parser.add_argument('-v', '--volume',
@@ -414,6 +418,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
             shm_size=self._args.shm_size,
             tty=True,
             stdin_open=True,
+            init=self._args.init,
         )
         if self._args.switch_root:
             creation_kwargs['user'] = "0"
