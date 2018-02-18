@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Added simple `--gui` option to mount X11 socket and set `DISPLAY` environment variable.
 - Added `--init` option to use init (`tini`) service in container.
 ### Fixed
 - Fixed environment option to use host environment if `=`-part is missing in environment
