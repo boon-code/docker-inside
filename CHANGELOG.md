@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.3.8] - 2018-02-18
 ### Added
 - Added simple `--gui` option to mount X11 socket and set `DISPLAY` environment variable.
 - Added `--init` option to use init (`tini`) service in container.
@@ -40,7 +42,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update `README.md` how to use the project
 - Integrate with *Travis CI* to automate testing and project health
 
-## [0.2.0] - 2018-01-07
+## 0.2.0 - 2018-01-07
 ### Added
 - Run a basic test for `ubuntu`, `busybox`, `alpine`, `centos` and `fedora`
 - Add support for `centos` and `fedora` images by checking commands to add users/groups and
@@ -54,3 +56,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Create unit tests using `pytest`.
 - Generate `.gitignore` using http://gitignore.io website.
 - Publish the project under MIT license.
+
+[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.8...HEAD
+[0.3.8]: https://github.com/boon-code/docker-inside/compare/0.3.7...0.3.8
+[0.3.7]: https://github.com/boon-code/docker-inside/compare/0.3.6a1...0.3.7
+[0.3.6]: https://github.com/boon-code/docker-inside/compare/0.3.5...0.3.6a1
+[0.3.5]: https://github.com/boon-code/docker-inside/compare/0.3.4...0.3.5
+[0.3.4]: https://github.com/boon-code/docker-inside/compare/0.3.1...0.3.4
+[0.3.1]: https://github.com/boon-code/docker-inside/compare/0.3.0...0.3.1
+[0.3.0]: https://github.com/boon-code/docker-inside/compare/0.2.0...0.3.0
