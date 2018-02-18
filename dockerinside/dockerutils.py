@@ -66,7 +66,7 @@ def env_list_to_dict(env_list, host_env=None):
                      part is missing.
     """
     if host_env is None:
-        host_env = {}
+        host_env = os.environ
     if env_list is None:
         env_list = []
     for i in env_list:

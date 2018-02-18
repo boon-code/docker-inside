@@ -215,6 +215,7 @@ main $@
 
 class DockerInsideApp(dockerutils.BasicDockerApp):
     SCRIPT_NAME = "docker_inside.sh"
+    X11_SOCKET = "/tmp/.X11-unix"
 
     @staticmethod
     def _add_docker_run_options(parser):
@@ -258,6 +259,14 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                             action='store_true',
                             default=False,
                             help="Enable debug output in shell script")
+        parser.add_argument('--init',
+                            action='store_true',
+                            default=False,
+                            help="Use tini init process to forward signals and reap zombies")
+        parser.add_argument('--gui',
+                            action='store_true',
+                            default=False,
+                            help="Prepare settings for GUI applications (DISPLAY, X11)")
         parser.add_argument('--name',
                             help="Name of the container")
         parser.add_argument('-v', '--volume',
@@ -335,6 +344,8 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         })
         if self._args.debug:
             env["DIN_VERBOSE"] = "1"
+        if self._args.gui:
+            env["DISPLAY"] = os.environ.get("DISPLAY", '')
         try:
             last_ep = image_info["Config"]["Entrypoint"]
             if last_ep is not None:
@@ -384,6 +395,13 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         env = self._prepare_environment(image_info)
         cmd = self._prepare_command(image_info)
         volumes = dict(self.volume_args_to_dict(self._args.volumes))
+        if self._args.gui:
+            if os.path.exists(self.X11_SOCKET):
+                self._log.debug("Mount X11 unix socket")
+                volumes[self.X11_SOCKET] = {
+                    "bind": self.X11_SOCKET,
+                    "mode": 'rw'
+                }
         if self._args.mount_home:
             self._log.debug("Mount real home directory")
             volumes[home_dir] = {
@@ -414,6 +432,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
             shm_size=self._args.shm_size,
             tty=True,
             stdin_open=True,
+            init=self._args.init,
         )
         if self._args.switch_root:
             creation_kwargs['user'] = "0"
