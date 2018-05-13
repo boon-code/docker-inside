@@ -119,6 +119,22 @@ def port_list_to_dict(port_list):
             yield normalize_port(tmp[0]), split_port_normalized(tmp[0])[0]
 
 
+def tmpfs_list_to_dict(tmpfs_list):
+    """Transform list of tmpfs parameters to dictionary
+
+    :param tmpfs_list: List of tmpfs entry (of form 'directory:options')
+    :returns: Dictionary as needed by Docker API
+    """
+    d = dict()
+    for i in tmpfs_list:
+        tmpfs_spec = i.split(':', 1)
+        if len(tmpfs_spec) == 1:
+            d[tmpfs_spec[0]] = ""
+        else:
+            d[tmpfs_spec[0]] = tmpfs_spec[1]
+    return d
+
+
 def tar_pack(data, write_mode='w', default_mode=0o640):
     def _add_file(archive, name, payload, mode):
         ti = tarfile.TarInfo(name)
