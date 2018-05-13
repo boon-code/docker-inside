@@ -90,6 +90,21 @@ def normalize_port(port_spec, **kwargs):
     return "{0}/{1}".format(*split_port_normalized(port_spec, **kwargs))
 
 
+def normalize_volume_spec(spec):
+    mode = 'rw'
+    tmp = spec.split(":", 2)
+    if len(tmp) == 3:
+        pass
+    elif len(tmp) == 2:
+        tmp.append(mode)
+    elif len(tmp) == 1:
+        tmp.append(tmp[0])
+        tmp.append(mode)
+    else:
+        raise ValueError("Wrong volume spec: '{0}".format(i))
+    return tmp
+
+
 def port_list_to_dict(port_list):
     if port_list is None:
         port_list = []
@@ -194,17 +209,8 @@ class BasicDockerApp(object):
     def volume_args_to_dict(args):
         d = dict()
         for i in args:
-            mode = 'rw'
-            tmp = i.split(":", 2)
-            if len(tmp) == 3:
-                mode = tmp[2]
-            elif len(tmp) == 2:
-                pass
-            elif len(tmp) == 1:
-                tmp.append(tmp[0])
-            else:
-                raise ValueError("Wrong volume spec: '{0}".format(i))
-            d[tmp[0]] = dict(bind=tmp[1], mode=mode)
+            tmp = normalize_volume_spec(i)
+            d[tmp[0]] = dict(bind=tmp[1], mode=tmp[2])
         return d
 
     def __init__(self, log, env=None):

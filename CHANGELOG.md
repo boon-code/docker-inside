@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+
+## [0.3.9] - 2018-05-13
+### Added
+- Added `--mount-workdir` option which simplifies to mount a work space and set it as working
+  directory (`-v /host/path:/container/path` and `-w /container/path`)
+
 ## [0.3.8] - 2018-02-18
 ### Added
 - Added simple `--gui` option to mount X11 socket and set `DISPLAY` environment variable.

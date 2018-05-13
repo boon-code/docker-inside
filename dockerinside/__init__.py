@@ -240,8 +240,11 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                             help="Publish a container's port(s) to the host ([ip:]hostp:contp)")
         parser.add_argument('--shm-size',
                             help="Size of /dev/shm, default value is 64MB")
-        parser.add_argument('-w', '--workdir',
-                            help="Working directory inside the container")
+        group = parser.add_mutually_exclusive_group(required=False)
+        group.add_argument('-w', '--workdir',
+                           help="Working directory inside the container")
+        group.add_argument('-W', '--mount-workdir',
+                           help="Mount and set working directory inside the container (volume spec)")
 
     @classmethod
     def _parse_args(cls, argv):
@@ -395,6 +398,15 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         env = self._prepare_environment(image_info)
         cmd = self._prepare_command(image_info)
         volumes = dict(self.volume_args_to_dict(self._args.volumes))
+        workdir = self._args.workdir
+        if self._args.mount_workdir:
+            wd_spec = dockerutils.normalize_volume_spec(self._args.mount_workdir)
+            self._log.debug("Mount and set workdir {1} (volume spec: {0}:{1}:{2})".format(*wd_spec))
+            volumes[wd_spec[0]] = {
+                "bind": wd_spec[1],
+                "mode": wd_spec[2]
+            }
+            workdir = wd_spec[1]
         if self._args.gui:
             if os.path.exists(self.X11_SOCKET):
                 self._log.debug("Mount X11 unix socket")
@@ -428,7 +440,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
             cap_drop=self._args.cap_drop,
             devices=self._args.devices,
             ports=ports,
-            working_dir=self._args.workdir,
+            working_dir=workdir,
             shm_size=self._args.shm_size,
             tty=True,
             stdin_open=True,
