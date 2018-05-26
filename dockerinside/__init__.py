@@ -245,6 +245,10 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                            help="Working directory inside the container")
         group.add_argument('-W', '--mount-workdir',
                            help="Mount and set working directory inside the container (volume spec)")
+        parser.add_argument('--tmpfs',
+                            dest='tmpfs',
+                            action='append',
+                            help="Mount tmpfs directories")
 
     @classmethod
     def _parse_args(cls, argv):
@@ -448,6 +452,8 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         )
         if self._args.switch_root:
             creation_kwargs['user'] = "0"
+        if self._args.tmpfs:
+            creation_kwargs['tmpfs'] = dockerutils.tmpfs_list_to_dict(self._args.tmpfs)
         self._cobj = self._dc.containers.create(self._args.image, **creation_kwargs)
         self._cobj.put_archive('/', script_pack)
         self._start()

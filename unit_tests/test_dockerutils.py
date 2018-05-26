@@ -44,3 +44,11 @@ def test_split_and_filter(du):
     assert t1 == ["a", "b", "c"]
     t2 = list(du._split_and_filter(["a", "b", "c"]))
     assert t2 == ["a", "b", "c"]
+
+
+def test_tmpfs_list(du):
+    """Test --tmpfs parameter parsing"""
+    exp1 = {"/dir1" : "rw,size=1G"}
+    assert du.tmpfs_list_to_dict(["/dir1:rw,size=1G"]) == exp1
+    exp2 = {"/dir1" : "", "/dir2" : "size=1G", "/dir3/bla" : "::::", "/dir4" : ""}
+    assert du.tmpfs_list_to_dict(["/dir1", "/dir2:size=1G", "/dir3/bla:::::", "/dir4:"]) == exp2
