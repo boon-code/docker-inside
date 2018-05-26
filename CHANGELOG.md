@@ -5,8 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+
+## [0.3.10] - 2018-05-23
 ### Added
-- Added support for `--tmpfs` (as in `docker run`)
+- Added support for `--tmpfs` (as in `docker run`) which allows to mount temporary directories
+  inside of docker containers
 
 ## [0.3.9] - 2018-05-13
 ### Added
@@ -64,7 +68,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Generate `.gitignore` using http://gitignore.io website.
 - Publish the project under MIT license.
 
-[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.9...HEAD
+[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.10...HEAD
+[0.3.9]: https://github.com/boon-code/docker-inside/compare/0.3.9...0.3.10
 [0.3.9]: https://github.com/boon-code/docker-inside/compare/0.3.8...0.3.9
 [0.3.8]: https://github.com/boon-code/docker-inside/compare/0.3.7...0.3.8
 [0.3.7]: https://github.com/boon-code/docker-inside/compare/0.3.6a1...0.3.7
