@@ -336,11 +336,12 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         groups_txt = ",".join([i.gr_name for i in groups])
         group_env = "\n".join(["{0},{1}".format(i.gr_name, i.gr_gid) for i in groups])
         self._log.debug("All groups: {0}".format(groups_txt))
-        env = dict(dockerutils.env_list_to_dict(self._args.env, self._env))
+        env = dict()
         try:
             env.update(dockerutils.env_list_to_dict(image_info["Config"]["Env"]))
         except KeyError:
             self._log.exception("No key 'Env' in image info")
+        env.update(dict(dockerutils.env_list_to_dict(self._args.env, self._env)))
         env.update({
             "DIN_UID": uid,
             "DIN_USER": username,

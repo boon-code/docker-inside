@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix volumes specification handling. It's now possible to mount one host path multiple times
   to different locations in the container image (f.e. with different access modes) as this is
   possible with `docker run`.
+- Fix precedence of environment variables: First lookup the image, then use environment variables
+  from command line.
 
 ## [0.3.10] - 2018-05-26
 ### Added
