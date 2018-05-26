@@ -222,12 +222,12 @@ class BasicDockerApp(object):
             raise InvalidContainerState(cname, status)
 
     @staticmethod
-    def volume_args_to_dict(args):
-        d = dict()
+    def volume_args_to_list(args):
+        l = list()
         for i in args:
             tmp = normalize_volume_spec(i)
-            d[tmp[0]] = dict(bind=tmp[1], mode=tmp[2])
-        return d
+            l.append("{0}:{1}:{2}".format(*tmp))
+        return l
 
     def __init__(self, log, env=None):
         self._log = log

@@ -5,7 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
+### Fixed
+- Fix volumes specification handling. It's now possible to mount one host path multiple times
+  to different locations in the container image (f.e. with different access modes) as this is
+  possible with `docker run`.
 
 ## [0.3.10] - 2018-05-23
 ### Added

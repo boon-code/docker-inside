@@ -401,7 +401,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         ports = dict(dockerutils.port_list_to_dict(self._args.ports))
         env = self._prepare_environment(image_info)
         cmd = self._prepare_command(image_info)
-        volumes = dict(self.volume_args_to_dict(self._args.volumes))
+        volumes = self.volume_args_to_list(self._args.volumes)
         workdir = self._args.workdir
         if self._args.mount_workdir:
             wd_spec = dockerutils.normalize_volume_spec(self._args.mount_workdir)
