@@ -105,6 +105,10 @@ def normalize_volume_spec(spec):
     return tmp
 
 
+def volume_spec_to_string(spec):
+    return "{0}:{1}:{2}".format(*spec)
+
+
 def port_list_to_dict(port_list):
     if port_list is None:
         port_list = []
@@ -225,8 +229,7 @@ class BasicDockerApp(object):
     def volume_args_to_list(args):
         l = list()
         for i in args:
-            tmp = normalize_volume_spec(i)
-            l.append("{0}:{1}:{2}".format(*tmp))
+            l.append(volume_spec_to_string(normalize_volume_spec(i)))
         return l
 
     def __init__(self, log, env=None):

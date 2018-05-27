@@ -407,30 +407,21 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         if self._args.mount_workdir:
             wd_spec = dockerutils.normalize_volume_spec(self._args.mount_workdir)
             self._log.debug("Mount and set workdir {1} (volume spec: {0}:{1}:{2})".format(*wd_spec))
-            volumes[wd_spec[0]] = {
-                "bind": wd_spec[1],
-                "mode": wd_spec[2]
-            }
+            volumes.append(dockerutils.volume_spec_to_string(wd_spec))
             workdir = wd_spec[1]
         if self._args.gui:
             if os.path.exists(self.X11_SOCKET):
                 self._log.debug("Mount X11 unix socket")
-                volumes[self.X11_SOCKET] = {
-                    "bind": self.X11_SOCKET,
-                    "mode": 'rw'
-                }
+                x11_spec = [self.X11_SOCKET, self.X11_SOCKET, 'rw']
+                volumes.append(dockerutils.volume_spec_to_string(x11_spec))
         if self._args.mount_home:
             self._log.debug("Mount real home directory")
-            volumes[home_dir] = {
-                "bind": home_dir,
-                "mode": 'rw',
-            }
+            mnt_spec = [home_dir, home_dir, 'rw']
+            volumes.append(dockerutils.volume_spec_to_string(mnt_spec))
         elif self._args.mount_as_home is not None:
             self._log.debug("Mount fake home directory: {0}".format(self._args.mount_as_home))
-            volumes[self._args.mount_as_home] = {
-                "bind": home_dir,
-                "mode": 'rw'
-            }
+            mnt_spec = [self._args.mount_as_home, home_dir, 'rw']
+            volumes.append(dockerutils.volume_spec_to_string(mnt_spec))
         elif self._args.tmp_home:
             env['DIN_CREATE_HOME'] = "1"
         entrypoint = dockerutils.linux_pjoin('/', self.SCRIPT_NAME)
