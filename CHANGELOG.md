@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 
+## [0.3.12] - 2018-05-27
+### Fixed
+- Fix broken arguments related to bind mounts (introduced in `0.3.11`)
+
 ## [0.3.11] - 2018-05-27
 ### Fixed
 - Fix volumes specification handling. It's now possible to mount one host path multiple times
@@ -76,7 +80,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Generate `.gitignore` using http://gitignore.io website.
 - Publish the project under MIT license.
 
-[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.11...HEAD
+[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.12...HEAD
+[0.3.12]: https://github.com/boon-code/docker-inside/compare/0.3.11...0.3.12
 [0.3.11]: https://github.com/boon-code/docker-inside/compare/0.3.10...0.3.11
 [0.3.10]: https://github.com/boon-code/docker-inside/compare/0.3.9...0.3.10
 [0.3.9]: https://github.com/boon-code/docker-inside/compare/0.3.8...0.3.9
