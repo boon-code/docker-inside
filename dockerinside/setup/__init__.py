@@ -103,7 +103,7 @@ class SetupApp(dockerutils.BasicDockerApp):
         )
         try:
             cobj.put_archive('/', script_pack)
-            dockerpty.start(self._dc.api, cobj.id)
+            cobj.start()
             cobj.wait()
         finally:
             cobj.stop()
