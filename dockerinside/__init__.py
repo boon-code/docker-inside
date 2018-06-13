@@ -244,7 +244,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         group.add_argument('-w', '--workdir',
                            help="Working directory inside the container")
         group.add_argument('-W', '--mount-workdir',
-                           help="Mount and set working directory inside the container (volume spec)")
+                           help="Mount and set working directory in the container (volume spec)")
         parser.add_argument('--tmpfs',
                             dest='tmpfs',
                             action='append',
@@ -474,6 +474,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
     def run(self, argv, capture_stdout=False):
         self._args = self._parse_args(argv)
         self._adapt_log_level()
+        # noinspection PyBroadException
         try:
             self._inside()
             if capture_stdout:

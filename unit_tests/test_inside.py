@@ -1,7 +1,7 @@
 import os
 import sys
-
 import pytest
+
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 SRC_DIR = os.path.realpath(os.path.join(THIS_DIR, '..'))
@@ -16,6 +16,7 @@ def tapp():
     return app
 
 
+# noinspection PyShadowingNames
 def test_argument_simple_parsing(tapp):
     simple_args = tapp._parse_args(["ubuntu:latest"])
     assert simple_args.image == "ubuntu:latest"
@@ -24,6 +25,7 @@ def test_argument_simple_parsing(tapp):
     assert (not simple_args.name)
 
 
+# noinspection PyShadowingNames
 def test_argument_more_args(tapp):
     simple_args = tapp._parse_args(
         ["--name=mycontainer",
@@ -37,6 +39,7 @@ def test_argument_more_args(tapp):
     assert simple_args.name == "mycontainer"
 
 
+# noinspection PyShadowingNames
 def test_simple_setup_docker(tapp):
     txt = tapp.run(
         ['--auto-pull',
@@ -50,6 +53,7 @@ def test_simple_setup_docker(tapp):
     assert b'Hello, world\r\n' == txt
 
 
+# noinspection PyShadowingNames
 @pytest.mark.parametrize("image", [
     'ubuntu:14.04', 'ubuntu:16.04', 'ubuntu:latest',
     'alpine:3.6', 'alpine:latest',

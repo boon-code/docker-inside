@@ -2,7 +2,12 @@ import os
 import grp
 import tarfile
 import tempfile
-import collections.abc
+
+try:
+    # noinspection PyCompatibility
+    from collections.abc import Sequence
+except ImportError:
+    from collections import Sequence
 
 import docker
 import docker.errors
@@ -59,7 +64,7 @@ def _assert_path_exists(path, type_=None):
 
 
 def env_list_to_dict(env_list, host_env=None):
-    """Generator to convert environemnt list to dictionary
+    """Generator to convert environment list to dictionary
 
     :param env_list: List of environment variables in format 'VARIABLE=VALUE'
     :param host_env: Optional host environment will be looked up, if '=VALUE'
@@ -209,7 +214,7 @@ class BasicDockerApp(object):
 
     @classmethod
     def normalize_image_spec(cls, image_spec):
-        if isinstance(image_spec, collections.abc.Sequence):
+        if isinstance(image_spec, Sequence):
             seq = image_spec
         else:
             seq = cls.normalize_image(image_spec)
@@ -227,10 +232,10 @@ class BasicDockerApp(object):
 
     @staticmethod
     def volume_args_to_list(args):
-        l = list()
+        volume_specs = list()
         for i in args:
-            l.append(volume_spec_to_string(normalize_volume_spec(i)))
-        return l
+            volume_specs.append(volume_spec_to_string(normalize_volume_spec(i)))
+        return volume_specs
 
     def __init__(self, log, env=None):
         self._log = log

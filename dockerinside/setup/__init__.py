@@ -112,6 +112,7 @@ class SetupApp(dockerutils.BasicDockerApp):
     def run(self, argv):
         self._args = self._parse_args(argv)
         logging.getLogger().setLevel(self._args.loglevel)
+        # noinspection PyBroadException
         try:
             self.setup(self._args.url,
                        home=self._args.home,
