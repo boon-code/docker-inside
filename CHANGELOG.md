@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.13] - 2018-06-14
+### Added
+- Added integration test case for `docker-inside-setup` package verifying basic function.
+### Fixed
+- Fix broken `docker-inside-setup` command (regression from `0.3.11`). Extend test cases to prevent
+  further regressions.
 
 ## [0.3.12] - 2018-05-27
 ### Fixed
@@ -80,7 +86,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Generate `.gitignore` using http://gitignore.io website.
 - Publish the project under MIT license.
 
-[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.12...HEAD
+[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.13...HEAD
+[0.3.12]: https://github.com/boon-code/docker-inside/compare/0.3.12...0.3.13
 [0.3.12]: https://github.com/boon-code/docker-inside/compare/0.3.11...0.3.12
 [0.3.11]: https://github.com/boon-code/docker-inside/compare/0.3.10...0.3.11
 [0.3.10]: https://github.com/boon-code/docker-inside/compare/0.3.9...0.3.10
