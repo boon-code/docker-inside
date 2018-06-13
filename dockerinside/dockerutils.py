@@ -105,8 +105,6 @@ def normalize_volume_spec(spec):
     elif len(tmp) == 1:
         tmp.append(tmp[0])
         tmp.append(mode)
-    else:
-        raise ValueError("Wrong volume spec: '{0}".format(spec))
     return tmp
 
 
@@ -208,9 +206,7 @@ class BasicDockerApp(object):
         if len(tmp) == 1:
             return tmp[0], 'latest'
         elif len(tmp) == 2:
-            return tmp
-        else:
-            raise ValueError("Invalid image specification: '{0}'".format(image_spec))
+            return tuple(tmp)
 
     @classmethod
     def normalize_image_spec(cls, image_spec):
