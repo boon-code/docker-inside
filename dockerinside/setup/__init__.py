@@ -85,7 +85,7 @@ class SetupApp(dockerutils.BasicDockerApp):
                 "mode": 0o755,
             }
         })
-        volumes = self.volume_args_to_dict([
+        volumes = self.volume_args_to_list([
             "{0}:/din_config".format(cfg_path)
         ])
         env = {
