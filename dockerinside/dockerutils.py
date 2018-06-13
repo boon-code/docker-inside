@@ -101,7 +101,7 @@ def normalize_volume_spec(spec):
         tmp.append(tmp[0])
         tmp.append(mode)
     else:
-        raise ValueError("Wrong volume spec: '{0}".format(i))
+        raise ValueError("Wrong volume spec: '{0}".format(spec))
     return tmp
 
 
