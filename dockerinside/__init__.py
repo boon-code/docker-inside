@@ -460,8 +460,9 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
             dockerpty.start(self._dc.api, self._cobj.id)
         else:
             self._cobj.start()
-        self._cobj.wait()
-        self._log.info("Container {0} stopped".format(self._cobj.id))
+        ret = self._cobj.wait()
+        self._log.info("Container {0} stopped and returned {1}".format(self._cobj.id,
+                                                                       ret['StatusCode']))
 
     def cleanup(self):
         if self._cobj is None:
