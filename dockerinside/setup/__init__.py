@@ -111,6 +111,8 @@ class SetupApp(dockerutils.BasicDockerApp):
         try:
             cobj.put_archive('/', script_pack)
             cobj.start()
+            for msg in cobj.logs(stdout=True, stderr=True, stream=True):
+                logging.debug("{0}".format(msg.decode('utf-8').rstrip('\n')))
             ret = cobj.wait()
             logging.info("setup returned {0}".format(ret['StatusCode']))
         finally:
