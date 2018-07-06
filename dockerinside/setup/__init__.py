@@ -1,5 +1,6 @@
 import os
 import sys
+import errno
 import argparse
 import logging
 
@@ -78,7 +79,13 @@ class SetupApp(dockerutils.BasicDockerApp):
         self._assert_image_available(self.DEFAULT_IMAGE, auto_pull)
         cfg_path = os.path.join(home, '.config', 'docker_inside')
         self._log.debug("Configuration directory (host): {0}".format(cfg_path))
-        os.makedirs(cfg_path, 0o755, exist_ok=True)
+        try:
+            os.makedirs(cfg_path, 0o755)
+        except OSError as e:
+            if (e.errno == errno.EEXIST) and os.path.isdir(cfg_path):
+                logging.debug("Directory '{0}' already exists".format(cfg_path))
+            else:
+                raise
         script_pack = dockerutils.tar_pack({
             "entrypoint.sh": {
                 "payload": SETUP_SCRPT,
