@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.14] - 2018-07-07
+### Added
+- Show return code of the running containers with log level info (default) for `docker-inside` and
+  `docker-inside-setup`. This also ensures that `docker-inside-setup` at least outputs a line
+  about whether it succeeded or failed.
+### Changed
+- Update local development environment (`requirements.txt`) as there were some false negatives with
+  my current setup (due to `pytest` version?).
+### Fixed
+- Avoid parameter `exist_ok` of `os.makedirs` as some versions of Python have a broken
+  implementation it seems.
+- Read output from `docker-inside-setup` command and show it if `--verbose` flag is used.
+
 ## [0.3.13] - 2018-06-14
 ### Added
 - Added integration test case for `docker-inside-setup` package verifying basic function.
@@ -86,7 +99,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Generate `.gitignore` using http://gitignore.io website.
 - Publish the project under MIT license.
 
-[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.13...HEAD
+[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.14...HEAD
+[0.3.13]: https://github.com/boon-code/docker-inside/compare/0.3.13...0.3.14
 [0.3.13]: https://github.com/boon-code/docker-inside/compare/0.3.12...0.3.13
 [0.3.12]: https://github.com/boon-code/docker-inside/compare/0.3.11...0.3.12
 [0.3.11]: https://github.com/boon-code/docker-inside/compare/0.3.10...0.3.11
