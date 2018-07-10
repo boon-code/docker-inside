@@ -295,6 +295,11 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                             action="store_true",
                             default=False,
                             help="Pull unavailable images automatically")
+        parser.add_argument('--no-cleanup',
+                            dest='cleanup',
+                            action="store_false",
+                            default=True,
+                            help="Don't clean up container")
         parser.add_argument('--switch-root',
                             action="store_true",
                             default=False,
@@ -494,7 +499,8 @@ exec {0} {1}
             else:
                 return None
         finally:
-            self.cleanup()
+            if self._args.cleanup:
+                self.cleanup()
 
     def run(self, argv):
         # noinspection PyBroadException
