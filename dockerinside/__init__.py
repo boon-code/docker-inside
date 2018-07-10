@@ -191,9 +191,6 @@ main() {
 
     _debug "Original entrypoint: ${DIN_ENTRYPOINT}"
     _debug "Inner command: $@"
-    echo "#!/bin/sh" > /docker_inside_inner.sh
-    echo "exec ${DIN_ENTRYPOINT} $@" >> /docker_inside_inner.sh
-    chmod a+rx /docker_inside_inner.sh
 
     if [ "${DIN_CREATE_HOME}" = "1" ] && [ ! -d "/home/${DIN_USER}" ]; then
         _debug "Create temporary home directory: /home/${DIN_USER}"
@@ -215,6 +212,7 @@ main $@
 
 class DockerInsideApp(dockerutils.BasicDockerApp):
     SCRIPT_NAME = "docker_inside.sh"
+    INNER_SCRIPT_NAME = "docker_inside_inner.sh"
     X11_SOCKET = "/tmp/.X11-unix"
 
     @staticmethod
@@ -320,6 +318,15 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         self._args = None
         self._cobj = None
 
+    def _get_inner_script(self, cmd):
+        script = """#!/bin/sh
+
+exec {0} {1}
+""".format("${DIN_ENTRYPOINT}",
+           dockerutils.quote_cmd(cmd)).encode('utf-8')
+        self._log.debug("Inner script code: {0}".format(script))
+        return script
+
     def _adapt_log_level(self):
         if not self._args.debug:
             logging.getLogger('urllib3').setLevel(logging.INFO)
@@ -376,16 +383,21 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         if cmd is None:
             self._log.debug("command is null")
         else:
-            self._log.debug("container command: {0}".format(" ".join(cmd)))
+            self._log.debug("container command: {0}".format(cmd))
         return cmd
 
     def _inside(self):
         """Run container with user environment"""
         self._assert_image_available(self._args.image, self._args.auto_pull)
         image_info = self._dc.images.get(self._args.image).attrs
+        cmd = self._prepare_command(image_info)
         pack_conf = {
             self.SCRIPT_NAME: {
                 "payload": INSIDE_SCRIPT,
+                "mode": 0o755,
+            },
+            self.INNER_SCRIPT_NAME: {
+                "payload": self._get_inner_script(cmd),
                 "mode": 0o755,
             }
         }
@@ -401,7 +413,6 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         script_pack = dockerutils.tar_pack(pack_conf)
         ports = dict(dockerutils.port_list_to_dict(self._args.ports))
         env = self._prepare_environment(image_info)
-        cmd = self._prepare_command(image_info)
         volumes = self.volume_args_to_list(self._args.volumes)
         workdir = self._args.workdir
         if self._args.mount_workdir:
@@ -426,6 +437,7 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
             env['DIN_CREATE_HOME'] = "1"
         entrypoint = dockerutils.linux_pjoin('/', self.SCRIPT_NAME)
         self._log.debug("New entrypoint: {0}".format(entrypoint))
+        self._log.debug("Command: {0}".format(cmd))
         creation_kwargs = dict(
             command=cmd,
             volumes=volumes,

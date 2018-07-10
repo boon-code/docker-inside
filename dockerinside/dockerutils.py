@@ -142,6 +142,10 @@ def tmpfs_list_to_dict(tmpfs_list):
     return d
 
 
+def quote_cmd(cmd):
+    return " ".join(['"{0}"'.format(i) for i in cmd if i != ''])
+
+
 def tar_pack(data, write_mode='w', default_mode=0o640):
     def _add_file(archive, name, payload, mode):
         ti = tarfile.TarInfo(name)
