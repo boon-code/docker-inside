@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added `--no-cleanup` flag to skip cleaning up the image (for debugging)
+### Changed
+- Prepare inner script with separated commands from the command line (uses ""). This is probably
+  still not perfect, but should be better than before
+- Change inner structure to allow better testability
 
 ## [0.3.14] - 2018-07-07
 ### Added
