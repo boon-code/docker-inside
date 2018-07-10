@@ -1,6 +1,7 @@
 import os
 import sys
 import pytest
+import docker
 
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -41,7 +42,7 @@ def test_argument_more_args(tapp):
 
 # noinspection PyShadowingNames
 def test_simple_setup_docker(tapp):
-    txt = tapp.run(
+    txt = tapp.run_no_handler(
         ['--auto-pull',
          '-e', "TEXT=Hello, world",
          '--name=di_simple_setup_test',
@@ -62,7 +63,7 @@ def test_simple_setup_docker(tapp):
     'fedora:latest',
 ])
 def test_user_id_docker(tapp, image):
-    txt = tapp.run(
+    txt = tapp.run_no_handler(
         ['--auto-pull',
          '--name=di_simple_setup_test',
          image,
