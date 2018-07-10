@@ -56,8 +56,8 @@ def test_simple_setup_docker(tapp):
 
 # noinspection PyShadowingNames
 @pytest.mark.parametrize("image", [
-    'ubuntu:14.04', 'ubuntu:16.04', 'ubuntu:latest',
-    'alpine:3.6', 'alpine:latest',
+    'ubuntu:14.04', 'ubuntu:16.04', 'ubuntu:18.04', 'ubuntu:latest',
+    'alpine:3.6', 'alpine:3.7', 'alpine:3.8', 'alpine:latest',
     'busybox:latest',
     'centos:latest',
     'fedora:latest',
