@@ -484,14 +484,22 @@ exec {0} {1}
         self._cobj.remove()
         self._cobj = None
 
-    def run(self, argv, capture_stdout=False):
+    def run_no_handler(self, argv, capture_stdout=False, and_stderr=False):
         self._args = self._parse_args(argv)
         self._adapt_log_level()
-        # noinspection PyBroadException
         try:
             self._inside()
             if capture_stdout:
-                return self._cobj.logs(stderr=False)
+                return self._cobj.logs(stderr=and_stderr)
+            else:
+                return None
+        finally:
+            self.cleanup()
+
+    def run(self, argv):
+        # noinspection PyBroadException
+        try:
+            self.run_no_handler(argv)
         except dockerutils.InvalidPath as e:
             logging.exception("{0} '{1}' doesn't exist".format(e.type_, e.path))
         except docker.errors.ImageNotFound:
@@ -501,8 +509,6 @@ exec {0} {1}
                 logging.exception("Image not found")
         except Exception:
             logging.exception("Failed to run inside()")
-        finally:
-            self.cleanup()
         return None
 
 
