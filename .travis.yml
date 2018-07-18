@@ -10,6 +10,8 @@ python:
   - "3.6"
   - "nightly"
 script:
+  - ./docker/build_images.sh ./docker/
+  - git clean -xfd
   - pytest
 deploy:
   - provider: pypi
