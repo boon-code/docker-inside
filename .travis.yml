@@ -1,5 +1,6 @@
 sudo: required
 language: python
+distro: xenial
 services:
   - docker
 addons:
@@ -8,6 +9,7 @@ addons:
 python:
   - "3.5"
   - "3.6"
+  - "3.7"
   - "nightly"
 script:
   - pytest
