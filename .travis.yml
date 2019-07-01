@@ -17,6 +17,7 @@ deploy:
     user: "prograstinator"
     password:
       secure: "QOXshXOfbOIr73joSPX4oMIrgPGPjsmMpEfHyhKPXh5MfD0qcyt4rUv+/8meO2bRloZuqrv6GAs32NjYNtWqsrdDtfhCkwB0DfG7ASCYLqJVrqGb+NQtzBHa2r8njqhWsf3jQWt0qG62/qQJNhil2KZkYtLBsSfo7Kju01og3cAE7Ou5UIUzQhmbe+6Re8pPl+gDyuiftd62ovYCjEZYI6LDxtQLPxZv1lHiBPYV6QJsTDUI9TH9NvpBR1mIgvBOrshPkTaClhAYKTXG4k+ESqwHa6+xJwHFtURA2toimsgWtViRt5KhrT1lE78CAjMgGKBlctw6OKJQuMfta5EwbKrioCDlax1iigDdrqxrah/8zatk3I1paa504LB+c0sf1k9CNuXIlER6z7Ud/bY/uQ18DDxzn7KiXPStsnMTAWgqmi5NLYBjH2kBXH73HzHaMa2perUQs1RlAtWkU/FDjF/akTLyMkVw7pVA2pk3neIlHppB9VD19X/cUz0M+kqSCtYRuO63kmwrhxbHUlO7gfEn+0uDeEj12IMmY9ICeiJ0Mt1rB5nrM+ZhWKUDjca4GEX6OBnSohNJ8cEjcOEvGY3W9gQgmBPBhcTBRgO3FmqDa4rBdaMqWCB468yA5NXvzFlkQYz8fFHE3ZAsPYg0rtU1Asik56q3ricgepyT41M="
+    skip_existing: true
     on:
       branch: master
       python: "3.6"
@@ -24,6 +25,7 @@ deploy:
     user: "prograstinator"
     password:
       secure: "CDujyAUxSxsZl6Gne+n/U1PSf0pSGkcnn9U6bPa9T/9lAfFrjpIuFyLysOJA18MumYuFVG8S760S5goWK1+6bIoV9hVdnqLFC+mF1hJxCTs/W5kaCB+7ErSd8YTF2bvDuiBabUfRQwMshWsVBGHgo0psgVgKdbB3umBy/HShNvN0bm0+UaJ0VhlzqpujsaSSGjiyHHMfJi2TEan5Peg9WatLP+JOHIQ2HZgPZF6IDGE/kZfVf3gskYh73AF4AIbDSWa2o4u6clKJYCZBX/SDppYtG1y4gOIOOo/7TTbz6icQAxZW0t6zmiB0LUJ9kHUnQisUChp2/FoRFfEkCsnRDlY8Hx019TNHx00taQ9s/CakCC3iNuo9YAfkLYJPguoeh+dkz6+ivjBK/SRG2zp5YYVyAt5oYDuVVaGAHsAWuR/jzoaSmydof4vBhYwxCpKtCeogg9o51vnkfnnoJ6cxxRu7sQpxyNtotnBi5c2bUvLcXyaQ3uibKABD2Y8MhpXYDME4AEYNGb36EaC5aIo/DfPAxaQ+S5yc87pgk9+8EtvVrbxm6twFLcQQilvGrWijvrLmIMN44nF+WgxrcXxo4EaXWFN1pTPESk2gJpjmrOiCQcugNB/0xdNzHb03P4xqOzbBz6tBAnI/lJq7JvVV7/WEtgnsSoY2kDH+poo2Aro="
+    skip_existing: true
     on:
       tags: true
       python: "3.6"
