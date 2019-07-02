@@ -1,5 +1,6 @@
 from setuptools import setup
 import datetime
+import os
 
 YEAR = datetime.date.today().year
 
@@ -7,6 +8,18 @@ __author__ = "Manuel Huber"
 __version__ = "0.3.14"
 __license__ = "MIT"
 __copyright__ = u'%s, Manuel Huber' % YEAR
+
+
+# Add Travis build id if not deploying a release (tag)
+if os.environ.get("TRAVIS", "") == "true":
+    build_id = os.environ["TRAVIS_BUILD_NUMBER"]
+    tag = os.environ.get("TRAVIS_TAG", "")
+    if tag:
+        if __version__ != tag:
+            raise RuntimeError(
+                    "tag != version: {0}, {1}".format(tag, __version__))
+    else:
+        __version__ = "{0}.{1}".format(__version__, build_id)
 
 
 setup(
