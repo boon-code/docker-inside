@@ -11,6 +11,8 @@ python:
   - "3.6"
   - "3.7"
   - "nightly"
+before_script:
+  - ./.travis/include_build_id.sh
 script:
   - pytest
 deploy:
