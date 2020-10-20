@@ -5,7 +5,6 @@ import grp
 import logging
 import argparse
 
-import argcomplete
 import docker
 import docker.errors
 import dockerpty

@@ -10,6 +10,7 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
+  - "3.8"
   - "nightly"
 script:
   - pytest
@@ -22,7 +23,7 @@ deploy:
     skip_existing: true
     on:
       branch: master
-      python: "3.6"
+      python: "3.8"
   - provider: pypi
     user: "prograstinator"
     password:
@@ -30,5 +31,5 @@ deploy:
     skip_existing: true
     on:
       tags: true
-      python: "3.6"
+      python: "3.8"
 

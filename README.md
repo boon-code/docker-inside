@@ -1,9 +1,9 @@
 # Docker Inside
 
-[![Build Status](https://travis-ci.org/boon-code/docker-inside.svg)](https://travis-ci.org/boon-code/docker-inside)
+[![Build Status](https://travis-ci.com/boon-code/docker-inside.svg)](https://travis-ci.com/boon-code/docker-inside)
 [![PyPI](https://img.shields.io/pypi/v/docker-inside.svg)](https://pypi.python.org/pypi/docker-inside)
 
-`dockerinside` is a python package that shall simplify running docker images as the current user
+`dockerinside` is a Python (Python3 only) package that shall simplify running docker images as the current user
 similar to the way *Jenkins* awesome ``docker.inside()`` works.
 There are two main use-cases:
 
@@ -18,7 +18,11 @@ a much more elegant approach to adapt the environment during startup of the cont
 
 ## Installation
 
-Install current *stable* version:
+Prerequisits:
+- Python3 installation
+- `python3-venv` is recommended to create a virtual environment
+
+Install current *stable* version (preferably in a virtual environment):
 
         pip install git+https://github.com/boon-code/docker-inside.git
 
@@ -76,3 +80,9 @@ Please let me know I you need support for more options from original `docker run
 any other suggestions how to improve this package.
 Please also let me know if your Docker image is failing using this package and I will see if I can
 fix the issue. Adding users and groups is unfortunately quite different among distributions.
+
+## Related
+
+I still use the package myself on a regular basis when using Docker. However, to avoid having to
+rely on work-arounds used in this script, `podman` is a simple and powerful replacement for Docker.
+`podman` handles user permissions and bind mounts in a sane way per default. Check it out!
