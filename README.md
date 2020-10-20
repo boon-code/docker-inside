@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/boon-code/docker-inside.svg)](https://travis-ci.org/boon-code/docker-inside)
 [![PyPI](https://img.shields.io/pypi/v/docker-inside.svg)](https://pypi.python.org/pypi/docker-inside)
 
-`dockerinside` is a python package that shall simplify running docker images as the current user
+`dockerinside` is a Python (Python3 only) package that shall simplify running docker images as the current user
 similar to the way *Jenkins* awesome ``docker.inside()`` works.
 There are two main use-cases:
 
@@ -18,7 +18,11 @@ a much more elegant approach to adapt the environment during startup of the cont
 
 ## Installation
 
-Install current *stable* version:
+Prerequisits:
+- Python3 installation
+- `python3-venv` is recommended to create a virtual environment
+
+Install current *stable* version (preferably in a virtual environment):
 
         pip install git+https://github.com/boon-code/docker-inside.git
 
