@@ -35,6 +35,11 @@ chown "${DIN_UID}:${DIN_GID}" /din_config/su-exec
 class SetupApp(dockerutils.BasicDockerApp):
     DEFAULT_SU_EXEC_URL = "https://github.com/ncopa/su-exec.git"
     DEFAULT_IMAGE = "alpine:3.6"
+    PASSED_HOST_ENV = (
+        'https_proxy', 'http_proxy',
+        'HTTPS_PROXY', 'HTTP_PROXY',
+        'HTTP_PROXY_AUTH'
+    )
 
     @classmethod
     def _parse_args(cls, argv):
@@ -101,6 +106,9 @@ class SetupApp(dockerutils.BasicDockerApp):
             "DIN_SU_EXEC_URL": url,
             "DIN_REFSPEC": refspec,
         }
+        host_env = dict({k:v for k,v in os.environ.items() if k in self.PASSED_HOST_ENV})
+        env.update(host_env)
+        logging.debug("Prepared environment: %s", host_env)
         cobj = self._dc.containers.create(
             self.DEFAULT_IMAGE,
             command="/entrypoint.sh",
