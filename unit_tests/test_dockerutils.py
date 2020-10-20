@@ -10,7 +10,7 @@ sys.path.insert(0, SRC_DIR)
 
 
 def mock_basic_docker_app(env):
-    from dockerinside.dockerutils import BasicDockerApp
+    from dockerinside import BasicDockerApp
 
     class MockBasicDockerApp(BasicDockerApp):
         def __init__(self):

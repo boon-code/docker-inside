@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import datetime
 import os
 
@@ -35,7 +35,10 @@ setup(
                  "License :: OSI Approved :: MIT License",
                  "Programming Language :: Python :: 3 :: Only",
                  "Topic :: System :: Systems Administration"],
-    packages=['dockerinside', 'dockerinside.setup'],
+    package_dir={
+        '': 'src'
+    },
+    packages=find_packages(where='./src'),
     entry_points={
         'console_scripts': [
             'din = dockerinside.__init__:main',
@@ -47,9 +50,11 @@ setup(
             'docker_inside_setup = dockerinside.setup.__init__:setup_main',
         ]
     },
-    install_requires=["argparse>=1.4.0",
-                      "argcomplete>=1.4.1",
-                      "docker>=2.7.0",
-                      "dockerpty>=0.4.1"],
+    install_requires=[
+        "argparse>=1.4.0",
+        "argcomplete>=1.4.1",
+        "docker>=2.7.0",
+        "dockerpty>=0.4.1"
+    ],
     setup_requires=['setuptools-markdown'],
 )

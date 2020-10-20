@@ -6,7 +6,6 @@ import logging
 
 import docker
 import docker.errors
-import dockerpty
 
 from .. import dockerutils
 
