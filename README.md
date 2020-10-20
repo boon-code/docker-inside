@@ -80,3 +80,9 @@ Please let me know I you need support for more options from original `docker run
 any other suggestions how to improve this package.
 Please also let me know if your Docker image is failing using this package and I will see if I can
 fix the issue. Adding users and groups is unfortunately quite different among distributions.
+
+## Related
+
+I still use the package myself on a regular basis when using Docker. However, to avoid having to
+rely on work-arounds used in this script, `podman` is a simple and powerful replacement for Docker.
+`podman` handles user permissions and bind mounts in a sane way per default. Check it out!
