@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Take host environment variables to configure a http / https proxy for `docker-inside-setup`
+### Changed
+- Update packaging structure using a separte `src` folder for the package
+- Update and simplify `requirements.txt`
+- Migrate to travis-ci.com
+- Switch default Python version for ci to `3.8`
 
 ## [0.3.14] - 2018-07-07
 ### Added
