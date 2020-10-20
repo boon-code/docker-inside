@@ -1,6 +1,6 @@
 # Docker Inside
 
-[![Build Status](https://travis-ci.org/boon-code/docker-inside.svg)](https://travis-ci.org/boon-code/docker-inside)
+[![Build Status](https://travis-ci.com/boon-code/docker-inside.svg)](https://travis-ci.com/boon-code/docker-inside)
 [![PyPI](https://img.shields.io/pypi/v/docker-inside.svg)](https://pypi.python.org/pypi/docker-inside)
 
 `dockerinside` is a Python (Python3 only) package that shall simplify running docker images as the current user
