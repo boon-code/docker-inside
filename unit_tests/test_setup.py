@@ -1,7 +1,10 @@
 import os
-import sys
+import logging
 import tempfile
 import pytest
+
+
+_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture()
@@ -15,17 +18,29 @@ def sapp():
 @pytest.fixture()
 def tmpdir():
     td = tempfile.TemporaryDirectory(suffix='din-setup-test')
-    sys.stderr.write("Create temporary directory: {0}\n".format(td.name))
+    _logger.info("Create temporary directory: %s", td.name)
     yield td.name
-    sys.stderr.write("Delete temporary directory: {0}\n".format(td.name))
+    _logger.info(f"Delete temporary directory: %s", td.name)
     td.cleanup()
 
 
-def test_su_exec_setup(sapp, tmpdir):
-    sapp.run([
+def _test_su_exec_inner(sapp, tmpdir, extra_args=[]):
+    su_exec = os.path.join(tmpdir, ".config", "docker_inside", "su-exec")
+    args = [
         "--name", "setup-test",
         "--home", tmpdir,
         "--auto-pull",
-    ])
-    su_exec = os.path.join(tmpdir, ".config", "docker_inside", "su-exec")
-    assert os.path.isfile(su_exec)
+    ]
+    args.extend(extra_args)
+    assert not os.path.isfile(su_exec), "su-exec binary must not exist prio to the test"
+    assert sapp.run(args) == 0, "Command is expected to succeed (return 0)"
+    assert os.path.isfile(su_exec), "su-exec binary has to exist"
+
+
+@pytest.mark.parametrize('extra_args', [
+    [],
+    ['--host-network']
+])
+def test_su_exec_setup(sapp, tmpdir, extra_args):
+    _test_su_exec_inner(sapp, tmpdir, extra_args)
+
