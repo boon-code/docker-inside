@@ -66,6 +66,10 @@ class SetupApp(dockerutils.BasicDockerApp):
                             help="Pull unavailable images automatically")
         parser.add_argument('--refspec',
                             help="Refspec for su-exec repo (tag/branch; default: master)")
+        parser.add_argument('--host-network',
+                            action="store_true",
+                            default=False,
+                            help="Allow access to host network (f.e. if using a proxy on locahost)")
         parser.set_defaults(loglevel=logging.INFO)
         args = parser.parse_args(args=argv)
         return args
@@ -108,12 +112,15 @@ class SetupApp(dockerutils.BasicDockerApp):
         host_env = dict({k:v for k,v in os.environ.items() if k in self.PASSED_HOST_ENV})
         env.update(host_env)
         logging.debug("Prepared environment: %s", host_env)
+        network_mode = 'host' if self._args.host_network else None
+        logging.debug("Network mode: %s", "default" if network_mode is None else network_mode)
         cobj = self._dc.containers.create(
             self.DEFAULT_IMAGE,
             command="/entrypoint.sh",
             volumes=volumes,
             environment=env,
             name=name,
+            network=network_mode
         )
         try:
             cobj.put_archive('/', script_pack)
