@@ -128,27 +128,34 @@ class SetupApp(dockerutils.BasicDockerApp):
             for msg in cobj.logs(stdout=True, stderr=True, stream=True):
                 logging.debug("{0}".format(msg.decode('utf-8').rstrip('\n')))
             ret = cobj.wait()
-            logging.info("setup returned {0}".format(ret['StatusCode']))
+            status_code = ret.get('StatusCode', None)
+            logging.info("setup returned %s", status_code)
+            return status_code
         finally:
             cobj.stop()
             cobj.remove()
 
     def run(self, argv):
+        ret = 1
         self._args = self._parse_args(argv)
         logging.getLogger().setLevel(self._args.loglevel)
         # noinspection PyBroadException
         try:
-            self.setup(self._args.url,
-                       home=self._args.home,
-                       auto_pull=self._args.auto_pull,
-                       name=self._args.name,
-                       refspec=self._args.refspec)
+            ret = self.setup(
+                self._args.url,
+                home=self._args.home,
+                auto_pull=self._args.auto_pull,
+                name=self._args.name,
+                refspec=self._args.refspec
+            )
         except dockerutils.InvalidPath as e:
             logging.exception("{0} '{1}' doesn't exist".format(e.type_, e.path))
         except docker.errors.ImageNotFound:
             logging.exception("Image '{0}' not found".format(self.DEFAULT_IMAGE))
         except Exception:
             logging.exception("Failed to run setup()")
+        finally:
+            return ret
 
 
 def setup_main():
