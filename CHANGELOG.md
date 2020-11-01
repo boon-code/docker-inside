@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Take host environment variables to configure a http / https proxy for `docker-inside-setup`
+- Added `--host-network` flag to allow `docker-inside-setup` to access the hosts network. This is
+  useful if using a local proxy server.
 ### Changed
 - Update packaging structure using a separte `src` folder for the package
 - Update and simplify `requirements.txt`

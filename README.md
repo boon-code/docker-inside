@@ -19,7 +19,7 @@ a much more elegant approach to adapt the environment during startup of the cont
 ## Installation
 
 Prerequisits:
-- Python3 installation
+- Python3 installation (``>= 3.6``)
 - `python3-venv` is recommended to create a virtual environment
 
 Install current *stable* version (preferably in a virtual environment):
