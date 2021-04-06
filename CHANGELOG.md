@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.16] - 2020-04-07
+### Added
+- Added `--no-remove` flag to keep a container. Default behavior is to delete
+  the container after usage
+
 ## [0.3.15] - 2020-11-01
 ### Added
 - Take host environment variables to configure a http / https proxy for `docker-inside-setup`
@@ -110,7 +115,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Generate `.gitignore` using http://gitignore.io website.
 - Publish the project under MIT license.
 
-[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.15...HEAD
+[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.16...HEAD
+[0.3.16]: https://github.com/boon-code/docker-inside/compare/0.3.15...0.3.16
 [0.3.15]: https://github.com/boon-code/docker-inside/compare/0.3.14...0.3.15
 [0.3.14]: https://github.com/boon-code/docker-inside/compare/0.3.13...0.3.14
 [0.3.13]: https://github.com/boon-code/docker-inside/compare/0.3.12...0.3.13
