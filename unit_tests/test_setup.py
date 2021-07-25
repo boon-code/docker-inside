@@ -102,12 +102,11 @@ class _ProxyHelper:
         _logger.info("Discarded %s elements", count)
 
     def set_env(self):
-        http_proxy = f"http://{self._host}:{self._port}"
-        https_proxy = f"https://{self._host}:{self._port}"
-        self._mp.setenv("http_proxy", http_proxy)
-        self._mp.setenv("HTTP_PROXY", http_proxy)
-        self._mp.setenv("https_proxy", https_proxy)
-        self._mp.setenv("HTTPS_PROXY", https_proxy)
+        proxy_addr = f"http://{self._host}:{self._port}"
+        self._mp.setenv("http_proxy", proxy_addr)
+        self._mp.setenv("HTTP_PROXY", proxy_addr)
+        self._mp.setenv("https_proxy", proxy_addr)
+        self._mp.setenv("HTTPS_PROXY", proxy_addr)
 
     @property
     def proxy_args(self):
