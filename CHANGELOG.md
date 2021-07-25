@@ -6,10 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [0.3.16] - 2020-04-07
+## [0.3.16] - 2021-07-26
 ### Added
 - Added `--no-remove` flag to keep a container. Default behavior is to delete
   the container after usage
+### Changed
+- Adapt minimum requirements of `pytest` and `proxy.py`
+### Fixed
+- Adapt unit tests to changed format in proxy.py and fix failing ci
 
 ## [0.3.15] - 2020-11-01
 ### Added
