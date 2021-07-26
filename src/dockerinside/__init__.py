@@ -280,6 +280,8 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                             action="append",
                             default=[],
                             help="Bind mounts a volume")
+        parser.add_argument('--no-remove', action='store_false', dest='remove', default=True,
+                            help="Don't remove container on stop")
         mnthome_grp = parser.add_mutually_exclusive_group()
         mnthome_grp.add_argument('-H', '--mount-home',
                                  action="store_true",
@@ -468,7 +470,8 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
             self._log.debug("'Inside' containter has already been deleted")
             return
         self._cobj.stop()
-        self._cobj.remove()
+        if self._args.remove:
+            self._cobj.remove()
         self._cobj = None
 
     def run(self, argv, capture_stdout=False):
