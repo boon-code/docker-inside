@@ -41,6 +41,12 @@ so it's highly recommended to use `su-exec`.
 
 Big thanks to **Natanael Copa** (*ncopa*) for sharing `su-exec`.
 
+### NO\_README
+
+If you experience problems related to packaging the `README.md` or related to
+`setuptools` you can disable this behavior using the environment variable
+`NO_README` (f.e. `NO_README=1`).
+
 ## Usage
 ### Basic
 Running an `ubuntu:16.04` container as current user with the home directory mounted:

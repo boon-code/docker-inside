@@ -21,12 +21,20 @@ if os.environ.get("TRAVIS", "") == "true":
     else:
         __version__ = "{0}.{1}".format(__version__, build_id)
 
+setup_extra = dict()
+if os.environ.get("NO_README", "") == "":
+    with open('README.md') as f:
+        setup_extra['long_description'] = f.read()
+    setup_extra['long_description_content_type'] = 'text/markdown'
+    setup_extra['setup_requires'] = [
+        'setuptools>=38.6.0'
+    ]
+
 
 setup(
     name='docker-inside',
     version=__version__,
     description='Run a docker container with you workspace and user',
-    long_description_markdown_filename='README.md',
     url="https://github.com/boon-code/docker-inside",
     license=__license__,
     author=__author__,
@@ -56,5 +64,5 @@ setup(
         "docker>=2.7.0",
         "dockerpty>=0.4.1"
     ],
-    setup_requires=['setuptools-markdown'],
+    **setup_extra
 )
