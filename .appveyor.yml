@@ -5,5 +5,7 @@ install:
   - sh: export DEBIAN_FRONTEND=noninteractive
   - sh: export PATH="$HOME/.local/bin:$PATH"
   - sh: python3 -m pip install pip && python3 -m pip install tox
+  - sh: apt-get update && apt-get install pandoc
 build_script:
+  - sh: NO_PANDOC=1 tox
   - sh: tox
