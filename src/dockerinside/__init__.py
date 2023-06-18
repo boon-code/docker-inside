@@ -302,6 +302,11 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                             action="store_true",
                             default=False,
                             help="Switch to root user during docker run")
+        parser.add_argument('--no-su-exec',
+                            dest='su_exec',
+                            action="store_false",
+                            default=True,
+                            help="Disable usage of su-exec binary (if available)")
         parser.add_argument('image',
                             help="The image to run")
         parser.add_argument('cmd',
@@ -393,12 +398,18 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         home_dir = os.path.expanduser('~')
         suexec = os.path.join(home_dir, '.config', 'docker_inside', 'su-exec')
         if os.path.exists(suexec):
-            pack_conf.update({
-                "/bin/su-exec": {
-                    "file": suexec,
-                    "mode": 0o755,
-                }
-            })
+            self._log.debug("su-exec binary was found")
+            if self._args.su_exec:
+                pack_conf.update({
+                    "/bin/su-exec": {
+                        "file": suexec,
+                        "mode": 0o755,
+                    }
+                })
+            else:
+                self._log.debug("su-exec is disabled via cli switch")
+        else:
+            self._log.debug("su-exec binary not found")
         script_pack = dockerutils.tar_pack(pack_conf)
         ports = dict(dockerutils.port_list_to_dict(self._args.ports))
         env = self._prepare_environment(image_info)
