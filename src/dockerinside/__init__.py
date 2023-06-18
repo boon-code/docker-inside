@@ -108,6 +108,46 @@ _add_group() {
     fi
 }
 
+try_su() {
+    local tmp=""
+
+    if _has_command su; then
+        _debug "su command found"
+    else
+        _debug "su command not found"
+        return 1
+    fi
+
+    tmp="$(su -c "id -u" "${DIN_USER}")"
+    if [ "${tmp}" = "${DIN_UID}" ]; then
+        _debug "su seems to work: uid=${tmp}"
+        return 0
+    else
+        _debug "su call failed: uid=${tmp}"
+        return 1
+    fi
+}
+
+try_runuser() {
+    local tmp=""
+
+    if _has_command runuser; then
+        _debug "runuser command found"
+    else
+        _debug "runuser command not found"
+        return 1
+    fi
+
+    tmp="$(runuser -c "id -u" "${DIN_USER}")"
+    if [ "${tmp}" = "${DIN_UID}" ]; then
+        _debug "runuser seems to work: uid=${tmp}"
+        return 0
+    else
+        _debug "runuser call failed: uid=${tmp}"
+        return 1
+    fi
+}
+
 try_su_exec() {
     local tmp=""
 
@@ -203,8 +243,12 @@ main() {
 
     if try_su_exec ; then
         exec su-exec "${DIN_USER}" "/docker_inside_inner.sh"
-    else
+    elif try_su ; then
         exec su -c "/docker_inside_inner.sh" "${DIN_USER}"
+    elif try_runuser ; then
+        exec runuser -c "/docker_inside_inner.sh" "${DIN_USER}"
+    else
+        _fail "Couldn't switch user, su-exec, su & runuser seem to be unavailable"
     fi
 }
 
