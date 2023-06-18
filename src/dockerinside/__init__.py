@@ -20,7 +20,7 @@ logging.basicConfig(
 
 INSIDE_SCRIPT = b"""#!/bin/sh
 
-BUSYBOX=0
+BUSYBOXUSR=0
 
 _fail() {
     echo "ERROR: $@" >&2
@@ -33,24 +33,52 @@ _debug() {
     fi
 }
 
-_try_busybox_applets() {
-    local applet=""
-
+_has_busybox() {
     if [ ! -e /bin/busybox ]; then
         _debug "busybox not found"
         return 1
     else
-        _debug "busybox found - checking applets"
+        _debug "busybox found"
+        return 0
     fi
+}
+
+_has_busybox_applet() {
+    local applet="$1"
+
+    [ -n "$applet" ] || { _fail "Missing parameter 'applet'"; }
+
+    busybox --list | grep -F "${applet}" >/dev/null 2>/dev/null
+    if [ $? -eq 0 ]; then
+        _debug "found applet '${applet}'"
+        return 0
+    else
+        _debug "busybox is missing applet '${applet}'"
+        return 1
+    fi
+}
+
+_has_busybox_applets() {
+    local applet=""
+
+    _has_busybox || return 1
+
+    for applet in "$@"; do
+        _has_busybox_applet "$applet" || return 1
+    done
+
+    _debug "All busybox applets ($@) found"
+
+    return 0
+}
+
+_try_busybox_usr_applets() {
+    local applet=""
+
+    _has_busybox || return 1
 
     for applet in "adduser" "addgroup"; do
-        busybox --list | grep -F "${applet}" >/dev/null 2>/dev/null
-        if [ $? -eq 0 ]; then
-            _debug "found applet '${applet}'"
-        else
-            _debug "busybox is missing applet '${applet}'"
-            return 1
-        fi
+        _has_busybox_applet "$applet" || return 1
     done
 
     _debug "All busybox applets found"
@@ -60,18 +88,41 @@ _try_busybox_applets() {
 
 _has_command() {
     local cmd="$1"
+    local nolink="$2"
     local path=""
+    local old=""
+    local searchpath="/bin:/sbin:/usr/bin:/usr/sbin:${PATH}"
 
-    path="$(command -v "${cmd}" 2>/dev/null)"
-    if [ $? -ne 0 ] || [ -z "${path}" ]; then
-        _debug "Command ${cmd} not found"
-        return 1
-    elif [ -L "${path}" ]; then  # centos...
-        _debug "Command ${cmd} resolves to path ${path} which is a link"
-        return 1
-    else
+    _debug "Search path is set to: ${searchpath}"
+
+    # Allow to avoid using symlinks as CentOS was symlinking adduser to useradd
+    # This flag is used to skip symlinks in this case.
+    [ -n "$nolink" ] || nolink=0
+
+    old="$IFS"
+    IFS=":"
+
+    for i in $searchpath; do
+        path="${i}/${cmd}"
+        if [ -x "$path" ]; then
+            _debug "Found path $path"
+            if [ "${nolink}" -ne 0 ] && [ -L "$path" ]; then
+                _debug "Path '${path}' is a link -> skip"
+            else
+                break
+            fi
+        fi
+        path=""
+    done
+
+    IFS="$old"
+
+    if [ -n "$path" ]; then
         _debug "Resolved command ${cmd} to path ${path}"
         return 0
+    else
+        _debug "Command ${cmd} not found"
+        return 1
     fi
 }
 
@@ -85,10 +136,10 @@ _add_group() {
         grep -E "^[^:]+:[^:]+:${grp_id}:" /etc/group >/dev/null 2>/dev/null
         if [ $? -ne 0 ]; then
             _debug "Create group ${grp_name} (${grp_id})"
-            if [ ${BUSYBOX} -eq 1 ]; then
+            if [ ${BUSYBOXUSR} -eq 1 ]; then
                 /bin/busybox addgroup -g "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
                 ret=$?
-            elif _has_command "addgroup" ; then
+            elif _has_command "addgroup" "1" ; then
                 addgroup --gid "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
                 ret=$?
             elif _has_command "groupadd" ; then
@@ -105,6 +156,84 @@ _add_group() {
         fi
     else
         _debug "Group '${grp_name}' already exists"
+    fi
+}
+
+try_su() {
+    local tmp=""
+
+    if _has_command su; then
+        _debug "su command found"
+    else
+        _debug "su command not found"
+        return 1
+    fi
+
+    tmp="$(su -c "id -u" "${DIN_USER}")"
+    if [ "${tmp}" = "${DIN_UID}" ]; then
+        _debug "su seems to work: uid=${tmp}"
+        return 0
+    else
+        _debug "su call failed: uid=${tmp}"
+        return 1
+    fi
+}
+
+try_sudo() {
+    local tmp=""
+
+    if _has_command sudo; then
+        _debug "sudo command found"
+    else
+        _debug "sudo command not found"
+        return 1
+    fi
+
+    tmp="$(sudo -u "${DIN_USER}" -- id -u)"
+    if [ "${tmp}" = "${DIN_UID}" ]; then
+        _debug "sudo seems to work: uid=${tmp}"
+        return 0
+    else
+        _debug "sudo call failed: uid=${tmp}"
+        return 1
+    fi
+}
+
+try_busybox_su() {
+    local tmp=""
+
+    _has_busybox || return 1
+    _has_busybox_applet "su" || return 1
+
+    _debug "Busybox applet 'su' found"
+
+    tmp="$(busybox su -c "id -u" "${DIN_USER}")"
+    if [ "${tmp}" = "${DIN_UID}" ]; then
+        _debug "busybox su seems to work: uid=${tmp}"
+        return 0
+    else
+        _debug "busybox su call failed: uid=${tmp}"
+        return 1
+    fi
+}
+
+try_runuser() {
+    local tmp=""
+
+    if _has_command runuser; then
+        _debug "runuser command found"
+    else
+        _debug "runuser command not found"
+        return 1
+    fi
+
+    tmp="$(runuser -c "id -u" "${DIN_USER}")"
+    if [ "${tmp}" = "${DIN_UID}" ]; then
+        _debug "runuser seems to work: uid=${tmp}"
+        return 0
+    else
+        _debug "runuser call failed: uid=${tmp}"
+        return 1
     fi
 }
 
@@ -134,11 +263,11 @@ main() {
         echo ""
     fi
 
-    if _try_busybox_applets ; then
-        BUSYBOX=1
+    if _try_busybox_usr_applets ; then
+        BUSYBOXUSR=1
     fi
 
-    _debug "BUSYBOX is ${BUSYBOX}"
+    _debug "BUSYBOXUSR is ${BUSYBOXUSR}"
     _debug "Current user: $(id -u)"
 
     _add_group "${DIN_GROUP}" "${DIN_GID}"
@@ -147,7 +276,7 @@ main() {
     id -u ${DIN_USER} >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         local ret=-1
-        if [ ${BUSYBOX} -eq 1 ]; then
+        if [ ${BUSYBOXUSR} -eq 1 ]; then
             busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" \
                     >/dev/null 2>/dev/null
             ret=$?
@@ -172,10 +301,10 @@ main() {
         local gid="${elm#*,}"
 
         if _add_group "${name}" "${gid}" ; then
-            if [ ${BUSYBOX} -eq 1 ]; then
+            if [ ${BUSYBOXUSR} -eq 1 ]; then
                 busybox adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
                 ret=$?
-            elif _has_command "adduser" ; then
+            elif _has_command "adduser" "1" ; then
                 adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
                 ret=$?
             elif _has_command "usermod" ; then
@@ -203,8 +332,16 @@ main() {
 
     if try_su_exec ; then
         exec su-exec "${DIN_USER}" "/docker_inside_inner.sh"
-    else
+    elif try_su ; then
         exec su -c "/docker_inside_inner.sh" "${DIN_USER}"
+    elif try_runuser ; then
+        exec runuser -c "/docker_inside_inner.sh" "${DIN_USER}"
+    elif try_busybox_su ; then
+        exec busybox su -c "/docker_inside_inner.sh" "${DIN_USER}"
+    elif try_sudo ; then
+        exec sudo -u "${DIN_USER}" "/docker_inside_inner.sh"
+    else
+        _fail "Couldn't switch user: su-exec, su, runuser and busybox su seem to be unavailable"
     fi
 }
 
@@ -302,6 +439,11 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
                             action="store_true",
                             default=False,
                             help="Switch to root user during docker run")
+        parser.add_argument('--no-su-exec',
+                            dest='su_exec',
+                            action="store_false",
+                            default=True,
+                            help="Disable usage of su-exec binary (if available)")
         parser.add_argument('image',
                             help="The image to run")
         parser.add_argument('cmd',
@@ -393,12 +535,18 @@ class DockerInsideApp(dockerutils.BasicDockerApp):
         home_dir = os.path.expanduser('~')
         suexec = os.path.join(home_dir, '.config', 'docker_inside', 'su-exec')
         if os.path.exists(suexec):
-            pack_conf.update({
-                "/bin/su-exec": {
-                    "file": suexec,
-                    "mode": 0o755,
-                }
-            })
+            self._log.debug("su-exec binary was found")
+            if self._args.su_exec:
+                pack_conf.update({
+                    "/bin/su-exec": {
+                        "file": suexec,
+                        "mode": 0o755,
+                    }
+                })
+            else:
+                self._log.debug("su-exec is disabled via cli switch")
+        else:
+            self._log.debug("su-exec binary not found")
         script_pack = dockerutils.tar_pack(pack_conf)
         ports = dict(dockerutils.port_list_to_dict(self._args.ports))
         env = self._prepare_environment(image_info)
