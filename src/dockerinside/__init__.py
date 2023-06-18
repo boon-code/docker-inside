@@ -33,24 +33,52 @@ _debug() {
     fi
 }
 
-_try_busybox_usr_applets() {
-    local applet=""
-
+_has_busybox() {
     if [ ! -e /bin/busybox ]; then
         _debug "busybox not found"
         return 1
     else
-        _debug "busybox found - checking applets"
+        _debug "busybox found"
+        return 0
     fi
+}
+
+_has_busybox_applet() {
+    local applet="$1"
+
+    [ -n "$applet" ] || { _fail "Missing parameter 'applet'"; }
+
+    busybox --list | grep -F "${applet}" >/dev/null 2>/dev/null
+    if [ $? -eq 0 ]; then
+        _debug "found applet '${applet}'"
+        return 0
+    else
+        _debug "busybox is missing applet '${applet}'"
+        return 1
+    fi
+}
+
+_has_busybox_applets() {
+    local applet=""
+
+    _has_busybox || return 1
+
+    for applet in "$@"; do
+        _has_busybox_applet "$applet" || return 1
+    done
+
+    _debug "All busybox applets ($@) found"
+
+    return 0
+}
+
+_try_busybox_usr_applets() {
+    local applet=""
+
+    _has_busybox || return 1
 
     for applet in "adduser" "addgroup"; do
-        busybox --list | grep -F "${applet}" >/dev/null 2>/dev/null
-        if [ $? -eq 0 ]; then
-            _debug "found applet '${applet}'"
-        else
-            _debug "busybox is missing applet '${applet}'"
-            return 1
-        fi
+        _has_busybox_applet "$applet" || return 1
     done
 
     _debug "All busybox applets found"
