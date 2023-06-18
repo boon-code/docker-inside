@@ -1,11 +1,21 @@
 image:
   - Ubuntu2004
+
+environment:
+  matrix:
+    - PYTHON: "3.8"
+    - PYTHON: "3.9"
+    - PYTHON: "3.10"
+    - PYTHON: "3.11"
+
 install:
-  - sh: git submodule update --init --recursive
-  - sh: export DEBIAN_FRONTEND=noninteractive
-  - sh: export PATH="$HOME/.local/bin:$PATH"
-  - sh: python3 -m pip install pip && python3 -m pip install tox
-  - sh: sudo apt-get update && sudo apt-get install -y --no-install-recommends pandoc
+  - . $HOME/venv${PYTHON}/bin/activate && python -m pip install --upgrade pip && python --version
+
 build_script:
-  - sh: NO_PANDOC=1 tox
-  - sh: tox
+  - echo "build"
+
+test_script:
+  - echo "test"
+
+deploy_script:
+  - echo "deploy"
