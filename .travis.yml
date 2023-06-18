@@ -1,6 +1,6 @@
 sudo: required
 language: python
-dist: xenial
+dist: jammy
 services:
   - docker
 addons:
