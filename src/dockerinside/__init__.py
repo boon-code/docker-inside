@@ -60,18 +60,41 @@ _try_busybox_applets() {
 
 _has_command() {
     local cmd="$1"
+    local nolink="$2"
     local path=""
+    local old=""
+    local searchpath="/bin:/sbin:/usr/bin:/usr/sbin:${PATH}"
 
-    path="$(command -v "${cmd}" 2>/dev/null)"
-    if [ $? -ne 0 ] || [ -z "${path}" ]; then
-        _debug "Command ${cmd} not found"
-        return 1
-    elif [ -L "${path}" ]; then  # centos...
-        _debug "Command ${cmd} resolves to path ${path} which is a link"
-        return 1
-    else
+    _debug "Search path is set to: ${searchpath}"
+
+    # Allow to avoid using symlinks as CentOS was symlinking adduser to useradd
+    # This flag is used to skip symlinks in this case.
+    [ -n "$nolink" ] || nolink=0
+
+    old="$IFS"
+    IFS=":"
+
+    for i in $searchpath; do
+        path="${i}/${cmd}"
+        if [ -x "$path" ]; then
+            _debug "Found path $path"
+            if [ "${nolink}" -ne 0 ] && [ -L "$path" ]; then
+                _debug "Path '${path}' is a link -> skip"
+            else
+                break
+            fi
+        fi
+        path=""
+    done
+
+    IFS="$old"
+
+    if [ -n "$path" ]; then
         _debug "Resolved command ${cmd} to path ${path}"
         return 0
+    else
+        _debug "Command ${cmd} not found"
+        return 1
     fi
 }
 
@@ -88,7 +111,7 @@ _add_group() {
             if [ ${BUSYBOX} -eq 1 ]; then
                 /bin/busybox addgroup -g "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
                 ret=$?
-            elif _has_command "addgroup" ; then
+            elif _has_command "addgroup" "1" ; then
                 addgroup --gid "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
                 ret=$?
             elif _has_command "groupadd" ; then
@@ -215,7 +238,7 @@ main() {
             if [ ${BUSYBOX} -eq 1 ]; then
                 busybox adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
                 ret=$?
-            elif _has_command "adduser" ; then
+            elif _has_command "adduser" "1" ; then
                 adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
                 ret=$?
             elif _has_command "usermod" ; then
