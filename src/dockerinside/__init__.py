@@ -20,7 +20,7 @@ logging.basicConfig(
 
 INSIDE_SCRIPT = b"""#!/bin/sh
 
-BUSYBOX=0
+BUSYBOXUSR=0
 
 _fail() {
     echo "ERROR: $@" >&2
@@ -33,7 +33,7 @@ _debug() {
     fi
 }
 
-_try_busybox_applets() {
+_try_busybox_usr_applets() {
     local applet=""
 
     if [ ! -e /bin/busybox ]; then
@@ -108,7 +108,7 @@ _add_group() {
         grep -E "^[^:]+:[^:]+:${grp_id}:" /etc/group >/dev/null 2>/dev/null
         if [ $? -ne 0 ]; then
             _debug "Create group ${grp_name} (${grp_id})"
-            if [ ${BUSYBOX} -eq 1 ]; then
+            if [ ${BUSYBOXUSR} -eq 1 ]; then
                 /bin/busybox addgroup -g "${grp_id}" "${grp_name}" >/dev/null 2>/dev/null
                 ret=$?
             elif _has_command "addgroup" "1" ; then
@@ -197,11 +197,11 @@ main() {
         echo ""
     fi
 
-    if _try_busybox_applets ; then
-        BUSYBOX=1
+    if _try_busybox_usr_applets ; then
+        BUSYBOXUSR=1
     fi
 
-    _debug "BUSYBOX is ${BUSYBOX}"
+    _debug "BUSYBOXUSR is ${BUSYBOXUSR}"
     _debug "Current user: $(id -u)"
 
     _add_group "${DIN_GROUP}" "${DIN_GID}"
@@ -210,7 +210,7 @@ main() {
     id -u ${DIN_USER} >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         local ret=-1
-        if [ ${BUSYBOX} -eq 1 ]; then
+        if [ ${BUSYBOXUSR} -eq 1 ]; then
             busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" \
                     >/dev/null 2>/dev/null
             ret=$?
@@ -235,7 +235,7 @@ main() {
         local gid="${elm#*,}"
 
         if _add_group "${name}" "${gid}" ; then
-            if [ ${BUSYBOX} -eq 1 ]; then
+            if [ ${BUSYBOXUSR} -eq 1 ]; then
                 busybox adduser "${DIN_USER}" "${name}" >/dev/null 2>/dev/null
                 ret=$?
             elif _has_command "adduser" "1" ; then
