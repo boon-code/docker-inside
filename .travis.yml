@@ -22,7 +22,7 @@ deploy:
       secure: "QOXshXOfbOIr73joSPX4oMIrgPGPjsmMpEfHyhKPXh5MfD0qcyt4rUv+/8meO2bRloZuqrv6GAs32NjYNtWqsrdDtfhCkwB0DfG7ASCYLqJVrqGb+NQtzBHa2r8njqhWsf3jQWt0qG62/qQJNhil2KZkYtLBsSfo7Kju01og3cAE7Ou5UIUzQhmbe+6Re8pPl+gDyuiftd62ovYCjEZYI6LDxtQLPxZv1lHiBPYV6QJsTDUI9TH9NvpBR1mIgvBOrshPkTaClhAYKTXG4k+ESqwHa6+xJwHFtURA2toimsgWtViRt5KhrT1lE78CAjMgGKBlctw6OKJQuMfta5EwbKrioCDlax1iigDdrqxrah/8zatk3I1paa504LB+c0sf1k9CNuXIlER6z7Ud/bY/uQ18DDxzn7KiXPStsnMTAWgqmi5NLYBjH2kBXH73HzHaMa2perUQs1RlAtWkU/FDjF/akTLyMkVw7pVA2pk3neIlHppB9VD19X/cUz0M+kqSCtYRuO63kmwrhxbHUlO7gfEn+0uDeEj12IMmY9ICeiJ0Mt1rB5nrM+ZhWKUDjca4GEX6OBnSohNJ8cEjcOEvGY3W9gQgmBPBhcTBRgO3FmqDa4rBdaMqWCB468yA5NXvzFlkQYz8fFHE3ZAsPYg0rtU1Asik56q3ricgepyT41M="
     skip_existing: true
     on:
-      branch: master
+      branch: main
       python: "3.8"
   - provider: pypi
     user: "prograstinator"
