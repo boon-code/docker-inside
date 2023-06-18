@@ -179,6 +179,26 @@ try_su() {
     fi
 }
 
+try_sudo() {
+    local tmp=""
+
+    if _has_command sudo; then
+        _debug "sudo command found"
+    else
+        _debug "sudo command not found"
+        return 1
+    fi
+
+    tmp="$(sudo -u "${DIN_USER}" -- id -u)"
+    if [ "${tmp}" = "${DIN_UID}" ]; then
+        _debug "sudo seems to work: uid=${tmp}"
+        return 0
+    else
+        _debug "sudo call failed: uid=${tmp}"
+        return 1
+    fi
+}
+
 try_busybox_su() {
     local tmp=""
 
@@ -318,6 +338,8 @@ main() {
         exec runuser -c "/docker_inside_inner.sh" "${DIN_USER}"
     elif try_busybox_su ; then
         exec busybox su -c "/docker_inside_inner.sh" "${DIN_USER}"
+    elif try_sudo ; then
+        exec sudo -u "${DIN_USER}" "/docker_inside_inner.sh"
     else
         _fail "Couldn't switch user: su-exec, su, runuser and busybox su seem to be unavailable"
     fi
