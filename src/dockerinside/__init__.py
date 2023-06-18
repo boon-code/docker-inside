@@ -179,6 +179,24 @@ try_su() {
     fi
 }
 
+try_busybox_su() {
+    local tmp=""
+
+    _has_busybox || return 1
+    _has_busybox_applet "su" || return 1
+
+    _debug "Busybox applet 'su' found"
+
+    tmp="$(busybox su -c "id -u" "${DIN_USER}")"
+    if [ "${tmp}" = "${DIN_UID}" ]; then
+        _debug "busybox su seems to work: uid=${tmp}"
+        return 0
+    else
+        _debug "busybox su call failed: uid=${tmp}"
+        return 1
+    fi
+}
+
 try_runuser() {
     local tmp=""
 
@@ -298,8 +316,10 @@ main() {
         exec su -c "/docker_inside_inner.sh" "${DIN_USER}"
     elif try_runuser ; then
         exec runuser -c "/docker_inside_inner.sh" "${DIN_USER}"
+    elif try_busybox_su ; then
+        exec busybox su -c "/docker_inside_inner.sh" "${DIN_USER}"
     else
-        _fail "Couldn't switch user, su-exec, su & runuser seem to be unavailable"
+        _fail "Couldn't switch user: su-exec, su, runuser and busybox su seem to be unavailable"
     fi
 }
 
