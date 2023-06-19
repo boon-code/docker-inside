@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.17] - 2023-06-19
+### Added
+- Added `--no-su-exec` flag to prevent usage of su-exec binary if available.
+  This is helpful for testing & development. Default behavior is unchanged.
+- Added environment variable `NO_README`. If set, `long_description` will not
+  be set. This can be used to reduce build time dependencies as the
+  `long_description` is only provided for the Pypi upload.
+### Changed
+- Improve support for alternative commands to switch the current user. Support
+  was added for `runuser`, `sudo` and `busybox su`.
+- Switch mainline to branch `main`. `master` is now deprecated.
+### Fixed
+- Update image used in travis ci to satisfy urllib3 requirement of
+  openssl `1.1.1`.
+- Remove deprecated package `setuptools-markdown` with the stock mechanism
+  in setuptools `>=38.6.0`
+
 ## [0.3.16] - 2021-07-26
 ### Added
 - Added `--no-remove` flag to keep a container. Default behavior is to delete
@@ -119,7 +136,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Generate `.gitignore` using http://gitignore.io website.
 - Publish the project under MIT license.
 
-[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.16...HEAD
+[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.17...HEAD
+[0.3.17]: https://github.com/boon-code/docker-inside/compare/0.3.16...0.3.17
 [0.3.16]: https://github.com/boon-code/docker-inside/compare/0.3.15...0.3.16
 [0.3.15]: https://github.com/boon-code/docker-inside/compare/0.3.14...0.3.15
 [0.3.14]: https://github.com/boon-code/docker-inside/compare/0.3.13...0.3.14
