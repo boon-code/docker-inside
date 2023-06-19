@@ -22,4 +22,4 @@ deploy_script:
   - echo "deploy"
 
 artifacts:
-  - path: dist/docker*.tar.gz
+  - path: dist/docker-inside-*.tar.gz
