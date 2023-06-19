@@ -25,7 +25,7 @@ if os.environ.get("TRAVIS", "") == "true":
 # Add AppVeyor build id if not deploying a release (tag)
 if os.environ.get("APPVEYOR", "") == "true":
     build_id = os.environ["APPVEYOR_BUILD_NUMBER"]
-    tag = os.environ.get("APPVEYOR_REPO_TAG", "")
+    tag = os.environ.get("APPVEYOR_REPO_TAG_NAME", "")
     if tag != "":
         if __version__ != tag:
             raise RuntimeError(
