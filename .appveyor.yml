@@ -10,6 +10,7 @@ environment:
 
 install:
   - . $HOME/venv${PYTHON}/bin/activate && python -m pip install --upgrade pip build && python --version
+  - env | grep "APPVEYOR"
 
 build_script:
   - . $HOME/venv${PYTHON}/bin/activate && python -m build
