@@ -23,3 +23,4 @@ deploy_script:
 
 artifacts:
   - path: dist/docker-inside-*.tar.gz
+  - path: dist/docker_inside-*.whl
