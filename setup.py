@@ -21,6 +21,19 @@ if os.environ.get("TRAVIS", "") == "true":
     else:
         __version__ = "{0}.{1}".format(__version__, build_id)
 
+
+# Add AppVeyor build id if not deploying a release (tag)
+if os.environ.get("APPVEYOR", "") == "true":
+    build_id = os.environ["APPVEYOR_BUILD_NUMBER"]
+    tag = os.environ.get("APPVEYOR_REPO_TAG", "")
+    if tag != "":
+        if __version__ != tag:
+            raise RuntimeError(
+                    "tag != version: {0}, {1}".format(tag, __version__))
+    else:
+        __version__ = "{0}.{1}".format(__version__, build_id)
+
+
 setup_extra = dict()
 if os.environ.get("NO_README", "") == "":
     with open('README.md') as f:
