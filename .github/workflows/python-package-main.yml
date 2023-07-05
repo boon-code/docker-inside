@@ -47,3 +47,12 @@ jobs:
         # Workaround: ensure we are running with the group runner_main to avoid
         #             using docker which conflcits with group ntp on alpine.
         sg runner_main  -c pytest
+    - name: Deploy on release
+      if: startsWith(github.ref, 'refs/tags/')
+      run: echo "this is a tag"
+    - name: Main branch
+      if: github.ref == 'refs/heads/main'
+      run: echo "this is main"
+    - name: Test branch
+      if: github.ref == 'refs/heads/try-github-action'
+      run: echo "this is try-github-action"
