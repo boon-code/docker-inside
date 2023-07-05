@@ -62,9 +62,15 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
+        pytest_args=""
+        if [ "x${RUNNER_DEBUG}" = "x1" ]; then
+            echo "Run a debug build"
+            export DIN_DEBUG_TEST="true"
+            export pytest_args="-rA"
+        fi
         # Workaround: ensure we are running with the group runner_main to avoid
         #             using docker which conflcits with group ntp on alpine.
-        sg runner_main  -c pytest
+        sg runner_main -c "pytest ${pytest_args}"
     - name: Deploy on release
       if: |
         startsWith(github.ref, 'refs/tags/') &&
