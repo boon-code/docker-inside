@@ -257,6 +257,22 @@ try_su_exec() {
     fi
 }
 
+_wrap_debug() {
+    local ret=-1
+
+    _debug "Wrapping call to $@"
+    if [ "${DIN_VERBOSE}" = "1" ]; then
+        "$@"
+        ret=$?
+    else
+        "$@" >/dev/null 2>/dev/null
+        ret=$?
+    fi
+    _debug "Wrapped call $@ returned $ret"
+
+    return $ret
+}
+
 main() {
 
     if [ "${DIN_VERBOSE}" = "1" ]; then
