@@ -286,6 +286,7 @@ main() {
     _debug "BUSYBOXUSR is ${BUSYBOXUSR}"
     _debug "Current user: $(id -u)"
 
+    _debug "Create main group ${DIN_GROUP} with id ${DIN_GID}"
     _add_group "${DIN_GROUP}" "${DIN_GID}"
 
     _debug "Create user ${DIN_USER}"
