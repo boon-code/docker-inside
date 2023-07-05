@@ -295,17 +295,16 @@ main() {
         local ret=-1
         if [ ${BUSYBOXUSR} -eq 1 ]; then
             _debug "using busybox adduser ..."
-            busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" \
-                    >/dev/null 2>/dev/null
+            _wrap_debug busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}"
             ret=$?
         elif _has_command "useradd" ; then
             _debug "using useradd ..."
-            useradd --gid "${DIN_GID}" \
+            _wrap_debug useradd --gid "${DIN_GID}" \
                     --uid "${DIN_UID}" \
                     --shell /bin/sh \
                     --no-create-home \
                     --no-user-group \
-                    "${DIN_USER}" >/dev/null 2>/dev/null
+                    "${DIN_USER}"
             ret=$?
         else
             _fail "No command found to add a user"
