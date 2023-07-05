@@ -40,6 +40,7 @@ jobs:
         echo "github.ref: ${{ github.ref }}"
         echo "github.ref_name: ${{ github.ref_name }}"
         echo "github.ref_type: ${{ github.ref_type }}"
+        echo "vars.DEPLOY_ON_GITHUB: ${{ vars.DEPLOY_ON_GITHUB }}"
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
