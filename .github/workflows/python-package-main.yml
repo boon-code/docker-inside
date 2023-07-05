@@ -27,6 +27,19 @@ jobs:
         echo "Create group runner_main for user ${username}"
         sudo groupadd -g 1234 runner_main
         sudo usermod -g runner_main ${username}
+    - name: Test variables
+      run: |
+        echo "CI: ${CI}"
+        echo "GITHUB_ACTIONS: ${GITHUB_ACTIONS}"
+        echo "GITHUB_REF_TYPE: ${GITHUB_REF_TYPE}"
+        echo "GITHUB_REF: ${GITHUB_REF}"
+        echo "GITHUB_REF_NAME: ${GITHUB_REF_NAME}"
+        echo "GITHUB_RUN_ATTEMPT: ${GITHUB_RUN_ATTEMPT}"
+        echo "GITHUB_RUN_ID: ${GITHUB_RUN_ID}"
+        echo "GITHUB_RUN_NUMBER: ${GITHUB_RUN_NUMBER}"
+        echo "github.ref: ${{ github.ref }}"
+        echo "github.ref_name: ${{ github.ref_name }}"
+        echo "github.ref_type: ${{ github.ref_type }}"
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
