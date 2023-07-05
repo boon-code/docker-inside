@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set up Docker
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v2
     - name: Add workaround group
       run: |
         # Workaround: prevent that "docker" is the primary group of the user
