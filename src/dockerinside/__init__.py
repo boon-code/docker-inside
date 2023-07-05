@@ -275,12 +275,15 @@ main() {
     _debug "Create user ${DIN_USER}"
     id -u ${DIN_USER} >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
+        _debug "Attempt to create user ${DIN_USER} with id ${DIN_UID}"
         local ret=-1
         if [ ${BUSYBOXUSR} -eq 1 ]; then
+            _debug "using busybox adduser ..."
             busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" \
                     >/dev/null 2>/dev/null
             ret=$?
         elif _has_command "useradd" ; then
+            _debug "using useradd ..."
             useradd --gid "${DIN_GID}" \
                     --uid "${DIN_UID}" \
                     --shell /bin/sh \
