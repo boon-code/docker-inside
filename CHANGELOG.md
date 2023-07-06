@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.18] - 2023-07-06
+### Added
+- Extended debug output from `docker_inside.sh` when using `--debug`
+### Changed
+- Switch CI to GitHub Actions
+### Fixed
+- Check actual return code after adding the user in `docker_inside.sh`
+
 ## [0.3.17] - 2023-06-19
 ### Added
 - Added `--no-su-exec` flag to prevent usage of su-exec binary if available.
@@ -136,7 +144,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Generate `.gitignore` using http://gitignore.io website.
 - Publish the project under MIT license.
 
-[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.17...HEAD
+[Unreleased]: https://github.com/boon-code/docker-inside/compare/0.3.18...HEAD
+[0.3.18]: https://github.com/boon-code/docker-inside/compare/0.3.17...0.3.18
 [0.3.17]: https://github.com/boon-code/docker-inside/compare/0.3.16...0.3.17
 [0.3.16]: https://github.com/boon-code/docker-inside/compare/0.3.15...0.3.16
 [0.3.15]: https://github.com/boon-code/docker-inside/compare/0.3.14...0.3.15
