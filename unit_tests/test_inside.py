@@ -39,6 +39,17 @@ def test_argument_more_args(tapp):
     assert simple_args.name == "mycontainer"
 
 
+def _filter_norm_text(txt):
+    lines = txt.decode('utf-8').replace('\r','').split('\n')
+    for line in lines:
+        if line.startswith("DEBUG:"):
+            sys.stderr.write(line + "\n")
+        elif line == '':
+            pass
+        else:
+            yield line
+
+
 # noinspection PyShadowingNames
 def test_simple_setup_docker(tapp):
     txt = tapp.run(
@@ -50,7 +61,7 @@ def test_simple_setup_docker(tapp):
          "${TEXT}"],
         capture_stdout=True
     )
-    assert b'Hello, world\r\n' == txt
+    assert 'Hello, world' == "\n".join(_filter_norm_text(txt))
 
 
 # noinspection PyShadowingNames
@@ -62,13 +73,10 @@ def test_simple_setup_docker(tapp):
     'fedora:latest',
 ])
 def test_user_id_docker(tapp, image):
-    txt = tapp.run(
-        ['--auto-pull',
-         '--name=di_simple_setup_test',
-         image,
-         '--',
-         'id',
-         "-u"],
-        capture_stdout=True
-    )
-    assert "{0}\r\n".format(os.getuid()) == txt.decode('utf-8')
+    args = ['--auto-pull', '--name=di_simple_setup_test',
+            image, '--', 'id', "-u"]
+    if os.environ.get("DIN_DEBUG_TEST", "") == "true":
+        args.insert(0, '--debug')
+        args.insert(0, '--verbose')
+    txt = tapp.run(args, capture_stdout=True)
+    assert "{0}".format(os.getuid()) == "\n".join(_filter_norm_text(txt))
