@@ -1,0 +1,98 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Build pipeline for docker-inside
+
+on:
+  push:
+
+env:
+  # build the release on this version
+  PYTHON_RELEASE_VERSION: "3.10"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v2
+    - name: Add workaround group
+      run: |
+        # Workaround: prevent that "docker" is the primary group of the user
+        # as this would conflict with docker-inside.
+        # So far, docker-inside can't remove and re-create groups
+        username=$(id -u -n)
+        echo "Create group runner_main for user ${username}"
+        sudo groupadd -g 1234 runner_main
+        sudo usermod -g runner_main ${username}
+    - name: Test variables
+      run: |
+        echo "CI: ${CI}"
+        echo "GITHUB_ACTIONS: ${GITHUB_ACTIONS}"
+        echo "GITHUB_REF_TYPE: ${GITHUB_REF_TYPE}"
+        echo "GITHUB_REF: ${GITHUB_REF}"
+        echo "GITHUB_REF_NAME: ${GITHUB_REF_NAME}"
+        echo "GITHUB_RUN_ATTEMPT: ${GITHUB_RUN_ATTEMPT}"
+        echo "GITHUB_RUN_ID: ${GITHUB_RUN_ID}"
+        echo "GITHUB_RUN_NUMBER: ${GITHUB_RUN_NUMBER}"
+        echo "github.ref: ${{ github.ref }}"
+        echo "github.ref_name: ${{ github.ref_name }}"
+        echo "github.ref_type: ${{ github.ref_type }}"
+        echo "vars.DEPLOY_ON_GITHUB: ${{ vars.DEPLOY_ON_GITHUB }}"
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Build package for ${{ env.PYTHON_RELEASE_VERSION }}
+      if: matrix.python-version == env.PYTHON_RELEASE_VERSION
+      run: |
+        python -m pip install --upgrade pip build
+        python -m build
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Test with pytest
+      run: |
+        pytest_args=""
+        if [ "x${RUNNER_DEBUG}" = "x1" ]; then
+            echo "Run a debug build"
+            export DIN_DEBUG_TEST="true"
+            export pytest_args="-rA"
+        fi
+        # Workaround: ensure we are running with the group runner_main to avoid
+        #             using docker which conflcits with group ntp on alpine.
+        sg runner_main -c "pytest ${pytest_args}"
+    - name: Deploy on release
+      if: |
+        startsWith(github.ref, 'refs/tags/') &&
+        matrix.python-version == env.PYTHON_RELEASE_VERSION &&
+        vars.DEPLOY_ON_GITHUB == 'true'
+      uses: pypa/gh-action-pypi-publish@f5622bde02b04381239da3573277701ceca8f6a0
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        skip-existing: true
+    - name: Main branch
+      if: |
+        github.ref == 'refs/heads/main' &&
+        matrix.python-version == env.PYTHON_RELEASE_VERSION
+      uses: pypa/gh-action-pypi-publish@f5622bde02b04381239da3573277701ceca8f6a0
+      with:
+        user: __token__
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository-url: https://test.pypi.org/legacy/
+        skip-existing: true
