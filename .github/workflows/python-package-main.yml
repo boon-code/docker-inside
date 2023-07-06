@@ -81,14 +81,18 @@ jobs:
         startsWith(github.ref, 'refs/tags/') &&
         matrix.python-version == env.PYTHON_RELEASE_VERSION &&
         vars.DEPLOY_ON_GITHUB == 'true'
-      run: echo "this is a tag"
+      uses: pypa/gh-action-pypi-publish@f5622bde02b04381239da3573277701ceca8f6a0
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        skip-existing: true
     - name: Main branch
       if: |
         github.ref == 'refs/heads/main' &&
         matrix.python-version == env.PYTHON_RELEASE_VERSION
-      run: echo "this is main"
-    - name: Test branch
-      if: |
-        github.ref == 'refs/heads/try-github-action' &&
-        matrix.python-version == '3.10'
-      run: echo "this is try-github-action"
+      uses: pypa/gh-action-pypi-publish@f5622bde02b04381239da3573277701ceca8f6a0
+      with:
+        user: __token__
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository-url: https://test.pypi.org/legacy/
+        skip-existing: true
