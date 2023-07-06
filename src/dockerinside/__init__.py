@@ -291,7 +291,7 @@ main() {
         else
             _fail "No command found to add a user"
         fi
-        [ $? -eq 0 ] || _fail "Couldn't create user ${DIN_USER}: errno=$?"
+        [ $ret -eq 0 ] || _fail "Couldn't create user ${DIN_USER}: errno=$ret"
     else
         _debug "User '${DIN_USER}' already exists"
     fi
