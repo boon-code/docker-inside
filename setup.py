@@ -21,6 +21,18 @@ if os.environ.get("TRAVIS", "") == "true":
     else:
         __version__ = "{0}.{1}".format(__version__, build_id)
 
+# Add GitHub Actions build: add build ids if not building a release (tag)
+if os.environ.get("GITHUB_ACTIONS") == "true":
+    build_number = os.environ["GITHUB_RUN_NUMBER"]
+    build_attempt = os.environ["GITHUB_RUN_ATTEMPT"]
+    ref_type = os.environ.get("GITHUB_REF_TYPE", "??")
+    ref_name = os.environ.get("GITHUB_REF_NAME", "")
+    if (ref_type == "tag") and ref_name:
+        if __version__ != ref_name:
+            raise RuntimeError("tag != version: {0}, {1}".format(ref_name, __version__))
+    else:
+        __version__ = "{0}.{1}.{2}".format(__version__, build_number, build_attempt)
+
 setup_extra = dict()
 if os.environ.get("NO_README", "") == "":
     with open('README.md') as f:
