@@ -257,6 +257,22 @@ try_su_exec() {
     fi
 }
 
+_wrap_debug() {
+    local ret=-1
+
+    _debug "Wrapping call to $@"
+    if [ "${DIN_VERBOSE}" = "1" ]; then
+        "$@"
+        ret=$?
+    else
+        "$@" >/dev/null 2>/dev/null
+        ret=$?
+    fi
+    _debug "Wrapped call $@ returned $ret"
+
+    return $ret
+}
+
 main() {
 
     if [ "${DIN_VERBOSE}" = "1" ]; then
@@ -270,23 +286,26 @@ main() {
     _debug "BUSYBOXUSR is ${BUSYBOXUSR}"
     _debug "Current user: $(id -u)"
 
+    _debug "Create main group ${DIN_GROUP} with id ${DIN_GID}"
     _add_group "${DIN_GROUP}" "${DIN_GID}"
 
     _debug "Create user ${DIN_USER}"
     id -u ${DIN_USER} >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
+        _debug "Attempt to create user ${DIN_USER} with id ${DIN_UID}"
         local ret=-1
         if [ ${BUSYBOXUSR} -eq 1 ]; then
-            busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}" \
-                    >/dev/null 2>/dev/null
+            _debug "using busybox adduser ..."
+            _wrap_debug busybox adduser -G "${DIN_GROUP}" -u "${DIN_UID}" -s /bin/sh -D -H "${DIN_USER}"
             ret=$?
         elif _has_command "useradd" ; then
-            useradd --gid "${DIN_GID}" \
+            _debug "using useradd ..."
+            _wrap_debug useradd --gid "${DIN_GID}" \
                     --uid "${DIN_UID}" \
                     --shell /bin/sh \
                     --no-create-home \
                     --no-user-group \
-                    "${DIN_USER}" >/dev/null 2>/dev/null
+                    "${DIN_USER}"
             ret=$?
         else
             _fail "No command found to add a user"
