@@ -46,7 +46,7 @@ jobs:
         echo "github.ref_type: ${{ github.ref_type }}"
         echo "vars.DEPLOY_ON_GITHUB: ${{ vars.DEPLOY_ON_GITHUB }}"
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Build package for ${{ env.PYTHON_RELEASE_VERSION }}
